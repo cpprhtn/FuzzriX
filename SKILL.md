@@ -1,7 +1,7 @@
 ---
 name: fuzzrix
 description: 'This skill should be used when the user asks to "fuzz this project", "set up fuzzing", "write a fuzz harness", "find memory bugs / crashes", "add libFuzzer/AFL++/Atheris", "auto-generate a fuzzer", "run continuous fuzzing", or mentions "FuzzriX / 퍼징 / 퍼즈 하네스". FuzzriX is an AI-driven, universal fuzzing accelerator: it profiles a target repo, extracts high-risk target functions (file/network/parsing/string sinks), generates a fuzz harness + a Dockerfile, builds them in an isolated container, self-heals compile errors in a feedback loop, runs the fuzzer, and reports triaged crashes with reproducers and fixes.'
-version: 0.1.0
+version: 0.1.1
 allowed-tools: Read Grep Glob Bash Write Edit Skill AskUserQuestion WebSearch WebFetch TodoWrite
 ---
 
@@ -24,6 +24,14 @@ the repo, identify the fuzzing surface, pick the strategy, write the harness + D
 engine produces and return a reproducer, a root-cause line, a CWE class, a fix, and a regression test.
 Output is a **reusable fuzzer left in the repo + a ranked, triaged crash report** — never a list of "bugs I
 spotted by reading code."
+
+> **Prerequisite & first move.**
+> - **Docker is a hard prerequisite**, not a suggestion — every build and run happens in a container. If
+>   Docker isn't available, say so, give the one-line install pointer, and **stop**; never fake progress by
+>   running on the host.
+> - **Reset the framing in your first reply.** The user will often call this with *"find the bugs / find the
+>   crashes."* You don't hunt bugs by reading code — you **build a fuzzer and let the engine find them, then
+>   explain what it finds.** Say that up front so the expectation is right before you start.
 
 Three philosophies, inherited from Longinus and adapted for fuzzing:
 

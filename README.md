@@ -76,7 +76,7 @@ playbook.
 
 ## Status
 
-**v0.1.0.** The thesis is *"LLM = fuzzing engineer + crash analyst."* Working today: the Docker-isolated
+**v0.1.1.** The thesis is *"LLM = fuzzing engineer + crash analyst."* Working today: the Docker-isolated
 engine, self-healing builds, multi-stack harness synthesis (C/C++ · Python/Atheris · Rust/cargo-fuzz). Next:
 deeper crash analysis and a strategy selector.
 
