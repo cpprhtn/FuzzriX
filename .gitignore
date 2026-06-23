@@ -1,0 +1,22 @@
+# FuzzriX ships to git as a SKILL (markdown playbook + deterministic helper
+# scripts + templates). Research lives locally and is NOT published here.
+
+# --- local research (not part of the distributed skill) ---
+/fuzzrix/          # evaluable core: analysis/synthesis/eval (research)
+/docs/             # direction/redesign notes (research planning)
+/examples/         # dogfood targets + crash fixtures + reports
+/runs/             # fuzz run outputs, corpora, crashes
+/eval-out/         # benchmark metrics output
+
+# --- planning notes / scratch ---
+*.txt
+!requirements*.txt
+
+# --- python / tooling cruft ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.DS_Store
