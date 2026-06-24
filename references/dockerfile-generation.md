@@ -145,6 +145,21 @@ RUN clang++ -g -O1 -fsanitize=fuzzer,address,undefined \
 Note `-fsanitize=fuzzer-no-link` on the library (instrument but don't add the entry point) and
 `-fsanitize=fuzzer` on the final link (adds `main`).
 
+> **Generated headers (common self-heal).** Many CMake projects *generate* a header at configure time —
+> most often an export header (`<name>_export.h` from `GenerateExportHeader`, defining `<NAME>_EXPORT` etc.).
+> If you compile the sources directly (no CMake), the build dies with `fatal error: '<name>_export.h' file
+> not found`. Self-heal by writing a minimal stub next to the sources:
+> ```c
+> #ifndef NAME_EXPORT_H
+> #define NAME_EXPORT_H
+> #define NAME_EXPORT
+> #define NAME_NO_EXPORT
+> #endif
+> ```
+> (Validated on `miniz`, which generates `miniz_export.h`.) The general rule: a "file not found" on a header
+> that isn't in the repo usually means it's CMake-generated — stub it, or run the project's `cmake` configure
+> step to produce it.
+
 ### aflplusplus {#aflplusplus}
 
 The `aflplusplus/aflplusplus` base also gives you `afl-clang-fast`. To run under AFL++ instead of libFuzzer,
