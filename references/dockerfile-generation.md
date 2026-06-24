@@ -12,15 +12,100 @@ toolchain complexity lives here so the host stays clean (BYOD).
   version tags carry a leading **`v`** (`v4.21c`, `v5.00c`) — a bare `4.21c` does not resolve.
 - **Build deps first, source last** so Docker layer cache survives source edits during the self-heal loop.
 - **Compile with sanitizers**: ASan (memory) + UBSan (undefined behavior) at minimum; libFuzzer for the
-  engine. `-g -O1` keeps stacks readable and fuzzing fast.
+  engine. `-g -O1` keeps stacks readable and fuzzing fast. A compile-time `-fsanitize=` flag is only half
+  the story — most need a matching runtime `*_OPTIONS` key baked into the image as `ENV` (table below),
+  because the run script launches `/fuzzer` directly and sets no `*_OPTIONS` itself.
 - **Compile C targets as C**: a `.c` file fed to `clang++` builds in C++ mode and name-mangles its symbols,
   so the harness's `extern "C"` references fail to link ("undefined reference"). Compile the `.c` with
   `clang` (`-fsanitize=fuzzer-no-link,address,undefined -c`), then link the object into the `clang++` harness.
 - **Keep the build command in the Dockerfile**, not hidden in a script, so the self-heal loop edits one
   visible place.
+- **Define `FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION`** (`-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION`) when the
+  target gates fuzzing-unfriendly behavior on it — the canonical libFuzzer macro for disabling CRC/checksum
+  checks or seeding a PRNG deterministically (`srand(0)`) so two similar inputs don't fork the corpus. It only
+  takes effect if the source `#ifdef`s on it; passing it otherwise is harmless.
 - Produce a known binary path **outside `/out`** (e.g. `/fuzzer`) so `run_fuzz.sh` can launch it. `run_fuzz.sh`
   bind-mounts the host out-dir over `/out` at run time, so a binary built into `/out` is masked and the run
   fails with `stat /out/fuzzer: no such file or directory`. Keep `/out` for corpus + crashes only.
+
+## Sanitizer flags & runtime options {#sanitizers}
+
+Each `-fsanitize=` flag you compile with has a runtime twin — an `ASAN_OPTIONS` / `UBSAN_OPTIONS` key that
+tunes detection. **Bake the fuzzing-mode defaults into the image as `ENV`.** This is not optional polish: the
+FuzzriX runner does a plain `docker run /fuzzer <libFuzzer flags>` and sets **no** `*_OPTIONS` at all (see
+[fuzzing-run.md](fuzzing-run.md)), so the only place these take effect is an `ENV` line in the Dockerfile.
+Keys are `:`-joined `key=value` pairs.
+
+| Compile flag (build) | Runtime env | Fuzzing-mode keys that matter |
+|---|---|---|
+| `-fsanitize=fuzzer` (final link, adds `main`) | — | libFuzzer flags live on the command line, not env — see [fuzzing-run.md](fuzzing-run.md) |
+| `-fsanitize=fuzzer-no-link` (lib/object, instrument only) | — | combine objects, then one `-fsanitize=fuzzer` link |
+| `-fsanitize=address` | `ASAN_OPTIONS` | `detect_leaks=0` (fuzz; flip to `1` for a deep leak pass), `redzone=16` (fast; `128` for analysis), `quarantine_size_mb=0`, `allocator_may_return_null=1`, `detect_stack_use_after_return=1` |
+| `-fsanitize=undefined` | `UBSAN_OPTIONS` | `halt_on_error=1` (catch the bug), `print_stacktrace=1`, `silence_unsigned_overflow=1` |
+| any of the above | both | the common signal block: `handle_abort=1:handle_segv=1:handle_sigbus=1:handle_sigfpe=1:handle_sigill=1:print_summary=1:use_sigaltstack=1` |
+
+```dockerfile
+# ...after the build RUN that produces /fuzzer...
+ENV ASAN_OPTIONS=detect_leaks=0:redzone=16:quarantine_size_mb=0:allocator_may_return_null=1:detect_stack_use_after_return=1:alloc_dealloc_mismatch=0:print_scariness=1:fast_unwind_on_fatal=1:print_suppressions=0:handle_abort=1:handle_segv=1:handle_sigbus=1:handle_sigfpe=1:handle_sigill=1:print_summary=1:use_sigaltstack=1
+ENV UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1:silence_unsigned_overflow=1:print_suppressions=0:handle_abort=1:handle_segv=1:handle_sigbus=1:handle_sigfpe=1:handle_sigill=1:print_summary=1:use_sigaltstack=1
+```
+
+Why these values, not the defaults (the ASan trio is the standard fuzzing-mode reset: `redzone=16`,
+`detect_leaks=0`, `quarantine_size_mb=0`):
+
+- **`detect_leaks=0` while fuzzing.** libFuzzer defaults to `detect_leaks=1` (when LSan is available): it
+  counts `malloc`/`free` on *every mutation* and escalates to a full LeakSanitizer pass on a count mismatch.
+  That per-mutation accounting tanks `exec/s` and buries real memory-safety crashes under leak noise, so turn
+  it off while fuzzing. Run one deep pass with `detect_leaks=1` only if leaks are the goal.
+- **`redzone=16`** is the fast fuzzing redzone; `32` is typical for corpus pruning and `128` for a
+  crash-analysis re-run (catches subtler overflows, slower). Note a large redzone (cutoff around `64`)
+  suppresses OOM/hang reporting, so keep it small while fuzzing. Never `redzone=0` — that disables
+  redzone-based overflow detection entirely.
+- **`quarantine_size_mb=0`** keeps freed memory from piling up and OOM-killing the capped container; a
+  nonzero quarantine improves use-after-free detection but costs RAM you don't have under `--memory`.
+- **`allocator_may_return_null=1`** turns a huge-allocation request into a `NULL` return instead of an
+  instant abort, so a giant-length input is fuzzing signal, not a spurious crash.
+- **`halt_on_error=1`** is what makes UBSan *crash* on undefined behavior instead of logging and continuing —
+  required for the engine to register the bug. (The crash-reproduce path can instead disable UBSan with
+  `halt_on_error=0` to walk past known UB; that's a runtime/triage concern, not something to bake here — see
+  [crash-triage.md](crash-triage.md).)
+- **`symbolize`** is left at its default; on Linux the sanitizer symbolizes offline. If you want inline
+  symbolized frames, the base image must ship `llvm-symbolizer` and you add
+  `symbolize=1:external_symbolizer_path=/usr/bin/llvm-symbolizer`.
+
+For TSan (`-fsanitize=thread`) builds, bake `TSAN_OPTIONS=history_size=3:...` (low `history_size` to fit the
+memory cap) plus the common signal block; MSan (`-fsanitize=memory`) needs only `MSAN_OPTIONS=symbolize=0:` +
+the common signal block. Don't combine `address` with `memory` or `thread` in one binary — they're mutually
+exclusive instrumentations.
+
+## Dictionary placement {#dict-options}
+
+A token **dictionary** (`.dict`: magic bytes, keywords, format markers) dramatically helps structured formats
+(JSON, protocols, image headers). `COPY` it into the image at a known path next to the binary, e.g.
+`/fuzzer.dict`.
+
+- **Format.** One entry per line, value double-quoted, optional label — `kw_png="\x89PNG"` or just `"{}"`.
+  Lines starting with `#` are comments. A malformed entry (missing quotes) makes libFuzzer exit with a
+  `ParseDictionaryFile: error in line N`, aborting the run rather than fuzzing without it — so keep it clean
+  and validate the file exists before wiring it in.
+
+- **A baked `.dict` is not auto-loaded — you must pass `-dict=`.** Raw libFuzzer (which is what `/fuzzer` is,
+  launched directly) does *not* pick up a sidecar `<binary>.dict` by convention; the `<binary>.dict`
+  auto-discovery you may have seen is a higher-level orchestrator behavior, not something the single
+  container does. Wire the dict explicitly:
+  - Manual run: `docker run ... /fuzzer -dict=/fuzzer.dict ... /out/corpus`.
+  - Via `run_fuzz.sh`: pass `--dict <path-in-build-context>`; the script copies it into the out-dir and
+    passes `-dict=/out/<basename>` (it does **not** read `/fuzzer.dict`). See [fuzzing-run.md](fuzzing-run.md).
+
+```dockerfile
+# Bake the dictionary next to /fuzzer (still must be passed via -dict= at run time):
+COPY target.dict /fuzzer.dict
+```
+
+> Note: an INI `.options` file (`[libfuzzer]`/`[asan]`/`[ubsan]` sections) is an **orchestrator** convention
+> parsed by a separate Python engine launcher — the FuzzriX single-container runner does not read it, so
+> baking one has no effect. Put libFuzzer flags on the run command ([fuzzing-run.md](fuzzing-run.md)) and
+> sanitizer options in the `ENV` lines above instead.
 
 ---
 

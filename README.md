@@ -1,7 +1,8 @@
 # FuzzriX
 
+**English** · [한국어](README.ko.md)
+
 **AI-driven universal fuzzing accelerator — an LLM as fuzzing engineer + crash analyst.**
-*Fuzz + Matrix + X.*
 
 > Fuzzing is the strongest bug-finding technique we have, but the LLM's role in it has been miscast. Asking a
 > model to *read code and point at bugs* is hallucination-prone and low-precision. FuzzriX casts the LLM as a
@@ -9,9 +10,34 @@
 > known fuzzing theory, and ② **analyzes the root cause** of the crashes a deterministic engine finds. The
 > LLM builds the fuzzer and explains the crashes — it does **not** do the bug-finding itself.
 
-FuzzriX is the successor to [Longinus](https://github.com/cpprhtn/Longinus). Where Longinus is a light,
-plugin-style security scanner, FuzzriX is the heavy precision weapon: it **builds a target-tailored fuzzer,
-runs it in isolation, and explains the crashes it brings back.**
+Point an AI agent at a repo and FuzzriX **stands up a real fuzzer for it, runs it in isolation, and brings
+back triaged crashes** — each with a reproducer, a root-cause line, and a fix.
+
+## Install
+
+FuzzriX ships as an agent skill usable by **Claude Code** and **Codex**.
+
+### Claude Code
+
+```bash
+git clone https://github.com/cpprhtn/FuzzriX.git
+ln -s "$(pwd)/FuzzriX" ~/.claude/skills/fuzzrix
+```
+
+Then in Claude Code: *"fuzz this project"* / *"set up libFuzzer for the parser"* / *"퍼징 돌려줘"*.
+
+### Codex / other agents
+
+Point the agent at this repo; it reads [AGENTS.md](AGENTS.md) → [SKILL.md](SKILL.md) and follows the same
+playbook.
+
+## Requirements
+
+- Docker (all building/fuzzing happens in containers).
+- Python 3 for the helper scripts (`scripts/scan_targets.py`).
+- An agent that supports skills (Claude Code) or `AGENTS.md` (Codex).
+- *Optional:* `tree-sitter` Python bindings for higher-fidelity surface extraction (the scanner falls back to
+  regex heuristics without them).
 
 ## Why this framing
 
@@ -48,54 +74,18 @@ A reusable, target-tailored fuzzer left in your repo **+** a ranked, triaged cra
 reproducer, a root-cause line, a CWE class, a fix, and a regression test. Plus machine-readable metrics for
 evaluation. (Not a list of "bugs spotted by reading code.")
 
-## Install
-
-FuzzriX ships as an agent skill usable by **Claude Code** and **Codex**.
-
-### Claude Code
-
-```bash
-git clone https://github.com/cpprhtn/FuzzriX.git
-ln -s "$(pwd)/FuzzriX" ~/.claude/skills/fuzzrix
-```
-
-Then in Claude Code: *"fuzz this project"* / *"set up libFuzzer for the parser"* / *"퍼징 돌려줘"*.
-
-### Codex / other agents
-
-Point the agent at this repo; it reads [AGENTS.md](AGENTS.md) → [SKILL.md](SKILL.md) and follows the same
-playbook.
-
-## Requirements
-
-- Docker (all building/fuzzing happens in containers).
-- Python 3 for the helper scripts (`scripts/scan_targets.py`).
-- An agent that supports skills (Claude Code) or `AGENTS.md` (Codex).
-- *Optional:* `tree-sitter` Python bindings for higher-fidelity surface extraction (the scanner falls back to
-  regex heuristics without them).
-
-## Status
-
-**v0.1.1.** The thesis is *"LLM = fuzzing engineer + crash analyst."* Working today: the Docker-isolated
-engine, self-healing builds, multi-stack harness synthesis (C/C++ · Python/Atheris · Rust/cargo-fuzz). Next:
-deeper crash analysis and a strategy selector.
-
-## Roadmap
-
-Priority is the **thin evaluable core first**, not more language support.
-
-- **Now:** strategy synthesis → fuzz run → crash analysis → metrics, wired end-to-end on one walking-skeleton
-  target, with machine-readable metrics output.
-- **Next:** a `strategy_selector` (raw-bytes / dictionary / structure-aware / differential / stateful) that
-  emits a strategy **and its rationale**; deeper root-cause (data-flow, exploitability, dedup accuracy).
-- **Then:** Magma-based ground-truth evaluation vs an *LLM-as-bug-finder* baseline; more stacks once the core
-  is solid.
-
 ## Safety
 
 FuzzriX fuzzes **code you own or are authorized to test**, **in a sandbox** — never live production services
 or remote hosts. It runs target code only inside Docker and caps CPU/RAM/disk/time. See
 [references/authorization.md](references/authorization.md).
+
+## Status
+
+**v0.2.0.** The thesis is *"LLM = fuzzing engineer + crash analyst."* Working today: the Docker-isolated
+engine, self-healing builds, multi-stack harness synthesis (C/C++ · Python/Atheris · Rust/cargo-fuzz),
+strategy selection, corpus management, and a coverage-improvement loop. Version history:
+[CHANGELOG.md](CHANGELOG.md).
 
 ## License
 

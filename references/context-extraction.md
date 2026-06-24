@@ -34,6 +34,25 @@ Prioritize functions where **outside data meets memory-unsafe operations**. Sign
 
 De-prioritize: pure getters, code with no external input, anything requiring elaborate global state to call.
 
+## 2b. Think like the attacker, not the author (the analyst hat)
+
+This is the **target-analyst / threat-modeler** hat. Read the code *and* the author's intent — but rank and
+harness from an **attacker's threat model**, because that's what most users actually want (CVEs, not a feature
+audit), and because **bugs live exactly where the author's intent and the code's real behavior diverge.**
+
+- **Intent is your baseline, not your verdict.** Understanding what a parser is *supposed* to accept tells you
+  (a) how to get a harness *past* the front-door validation into the meaty logic, and (b) what counts as a real
+  bug (a crash / memory error) vs intended behavior (rejecting bad input with an error is **not** a bug). You
+  set this baseline; the **engine** finds the divergence from it — you never declare a vuln by reading code.
+- **Trace the untrusted-data path.** For each candidate, ask: where does attacker-controlled data enter, what
+  transformations does it pass through, and which memory-unsafe operation does it eventually reach? Rank by
+  **reachability-from-untrusted-input × depth-of-memory-unsafety**, not by what the product "cares about."
+- **Harvest harness fuel while you read.** The same pass should collect: the **input contract / format** of each
+  target (so the harness reaches deep code), **seed candidates** (valid sample inputs), and **dictionary
+  tokens** (magic bytes, keywords, format markers). These feed [strategy-selection.md](strategy-selection.md),
+  [corpus-management.md](corpus-management.md), and the [coverage loop](coverage-iteration.md) — getting past a
+  format gate is often a bigger win than more run time.
+
 ## 3. Run the scanner
 
 ```bash

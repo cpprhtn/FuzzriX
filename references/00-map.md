@@ -9,11 +9,14 @@ whole tree.
 |---|---|---|
 | 0. Gate | [authorization.md](authorization.md) | who/what you may fuzz; mandatory resource & sandbox caps |
 | 1–2. Profile & extract | [context-extraction.md](context-extraction.md) | detect stack/build system; find & rank target functions |
+| 2b. Strategy | [strategy-selection.md](strategy-selection.md) | pick libFuzzer knobs (value_profile, dict, fork, max_len) per mode + emit rationale |
 | 3a. Harness | [harness-generation.md](harness-generation.md) | per-engine harness patterns (libFuzzer, AFL++, Atheris, cargo-fuzz, Go) |
-| 3b. Dockerfile | [dockerfile-generation.md](dockerfile-generation.md) | trusted base images, sanitizer build flags, layering |
+| 3b. Dockerfile | [dockerfile-generation.md](dockerfile-generation.md) | trusted base images, sanitizer build flags + runtime `*_OPTIONS`, dict placement, layering |
 | 4. Build & heal | [self-healing.md](self-healing.md) | the bounded compile-error feedback loop |
-| 5. Fuzz | [fuzzing-run.md](fuzzing-run.md) | running with caps, seeding corpus, watching coverage |
-| 6. Triage & report | [crash-triage.md](crash-triage.md) | minimize, dedup, classify, severity, report shape |
+| 5. Fuzz | [fuzzing-run.md](fuzzing-run.md) | running with caps, flags, exit codes, stderr signals, metrics |
+| 5b. Corpus | [corpus-management.md](corpus-management.md) | seed, `-merge=1` minimize, persist & reuse across runs |
+| 5c. Coverage loop | [coverage-iteration.md](coverage-iteration.md) | bounded run→diagnose-wall→fix-harness/seed/dict→re-run; the top perf lever |
+| 6. Triage & report | [crash-triage.md](crash-triage.md) | minimize/cleanse, dedup signature, security & severity rules, report shape |
 
 ## Signal → jump (skip the loop when you already see it)
 
@@ -25,6 +28,9 @@ whole tree.
 | `Cargo.toml` | [harness-generation.md](harness-generation.md#rust-cargo-fuzz) |
 | `go.mod` | [harness-generation.md](harness-generation.md#go-native) |
 | a build error in `docker build` output | [self-healing.md](self-healing.md) |
+| a target full of `memcmp`/magic-number checks, or a known file format | [strategy-selection.md](strategy-selection.md) — value_profile + a dict |
+| an existing `corpus/` / sample-input dir, or you want runs to accumulate | [corpus-management.md](corpus-management.md) |
+| `cov:` flat / a low fraction of edges reached / functions never entered | [coverage-iteration.md](coverage-iteration.md) |
 | a crash file in the output dir | [crash-triage.md](crash-triage.md) |
 
 ## Helper scripts

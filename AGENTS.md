@@ -37,8 +37,14 @@ Atheris / cargo-fuzz, set up continuous fuzzing, or mentions "FuzzriX / 퍼징".
 
 ## The loop (full detail in SKILL.md)
 
-`profile → identify fuzzing surface → synthesize strategy + harness + Dockerfile → build & self-heal →
-fuzz (deterministic engine) → analyze crashes (root cause + fix + regression test) & report`
+`profile → identify fuzzing surface (attacker threat model) → synthesize strategy + harness + Dockerfile →
+build & self-heal → fuzz (deterministic engine) → improve coverage (bounded run→diagnose→fix→re-run loop) →
+analyze crashes (root cause + fix + regression test) & report`
+
+Walked wearing four hats, one agent: **target analyst/threat-modeler** (rank by attacker reachability; intent
+is the baseline, the engine finds where behavior diverges from it) → **harness engineer** (fast, deterministic,
+deep-reaching) → **coverage coach** (clear the wall the engine is stuck behind — the biggest perf lever) →
+**crash analyst**. Detection is always the engine's job, never any hat's.
 
 ## Helper tooling (deterministic, in this repo)
 

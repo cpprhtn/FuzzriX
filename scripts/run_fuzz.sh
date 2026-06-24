@@ -83,6 +83,7 @@ docker run --name "$CONTAINER" \
     -rss_limit_mb=2048 \
     -timeout=25 \
     -print_final_stats=1 \
+    -use_value_profile=1 \
     -artifact_prefix=/out/crashes/ \
     $DICT_FLAG \
     /out/corpus

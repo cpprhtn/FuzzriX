@@ -2,11 +2,13 @@
 # scripts + templates). Research lives locally and is NOT published here.
 
 # --- local research (not part of the distributed skill) ---
-/fuzzrix/          # evaluable core: analysis/synthesis/eval (research)
-/docs/             # direction/redesign notes (research planning)
-/examples/         # dogfood targets + crash fixtures + reports
-/runs/             # fuzz run outputs, corpora, crashes
-/eval-out/         # benchmark metrics output
+# (evaluable core, tests, planning/redesign docs, dogfood targets, run outputs)
+/fuzzrix/
+/tests/
+/docs/
+/examples/
+/runs/
+/eval-out/
 
 # --- planning notes / scratch ---
 *.txt
