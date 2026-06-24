@@ -167,6 +167,13 @@ integer values). The stats libFuzzer actually prints are:
 
 These are the machine-readable numbers behind the README's "evaluable by design" claim — emit them with the report.
 
+> **Coverage is reported differently per engine.** Only native libFuzzer (C/C++ and Rust cargo-fuzz) prints
+> `cov:`/`ft:`. **atheris** prints only `corp: N/...` (no `cov:` number) and **Go**'s native fuzzer reports
+> `new interesting: N (total: M)`. So when `cov:` is absent, fall back to the corpus/interesting-input count
+> as a coverage *proxy* — don't report `cov` as 0/None and call the run dead. Also: atheris only instruments
+> *Python* code — a native C extension (e.g. `ujson`) stays a black box and the corpus barely grows unless the
+> extension itself is built with coverage (see [harness-generation.md](harness-generation.md#python-atheris)).
+
 ## Engine variations
 
 The libFuzzer path above is the MVP. The other engines use their own runners:

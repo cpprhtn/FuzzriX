@@ -3,6 +3,31 @@
 All notable changes to FuzzriX are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project uses semantic versioning.
 
+## [0.4.0] — 2026-06-24
+
+Validation bench widened to a 5-language × multi-domain matrix; the gaps it
+surfaced were fixed in the playbook.
+
+### Added
+- Image domain validated end-to-end (`stb_image`) — the bench now spans parser ·
+  calc · compression · xml · url · image across **C · C++ · Rust · Go · Python**
+  (all build + fuzz; Go via `go test -fuzz`).
+
+### Changed
+- **dockerfile-generation** — dictionary values must escape non-printable bytes as
+  `\xNN`; a raw `\r`/`\n` makes libFuzzer reject the *entire* dict
+  (`ParseDictionaryFile error`), silently dropping it. (Image/binary magics bite.)
+- **fuzzing-run** — coverage is reported differently per engine (native libFuzzer
+  `cov:`/`ft:` vs atheris `corp:` vs Go `new interesting`); fall back to the
+  corpus/interesting count when `cov:` is absent instead of reporting a dead run.
+- **harness-generation** — atheris instruments *Python bytecode* only; a native C
+  extension (e.g. `ujson`) is a black box unless the extension is built with
+  coverage — disclose whether the native layer was actually instrumented.
+
+### Notes
+- Heavy domains (TLS/crypto, media/ffmpeg) are deferred to a later release rather
+  than faked with light stand-ins.
+
 ## [0.3.0] — 2026-06-24
 
 Skill tuned from research + a 5-language validation bench (no new structure — the

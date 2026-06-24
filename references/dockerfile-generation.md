@@ -89,6 +89,12 @@ A token **dictionary** (`.dict`: magic bytes, keywords, format markers) dramatic
   `ParseDictionaryFile: error in line N`, aborting the run rather than fuzzing without it — so keep it clean
   and validate the file exists before wiring it in.
 
+- **Escape every non-printable byte as `\xNN`.** The *only* valid escapes in a dict value are `\\`, `\"`, and
+  `\xNN`. A raw control byte — `\r`, `\n`, a literal high byte — makes libFuzzer reject the **whole file**
+  (`ParseDictionaryFile: error in line N`), so the run silently loses the dict. This bites image/binary magics
+  most: write a PNG magic as `png="\x89PNG\x0d\x0a\x1a\x0a"`, **not** `"\x89PNG\r\n\x1a\n"`. When mining magics
+  from source, encode any byte outside `0x20–0x7e` as `\xNN`.
+
 - **A baked `.dict` is not auto-loaded — you must pass `-dict=`.** Raw libFuzzer (which is what `/fuzzer` is,
   launched directly) does *not* pick up a sidecar `<binary>.dict` by convention; the `<binary>.dict`
   auto-discovery you may have seen is a higher-level orchestrator behavior, not something the single

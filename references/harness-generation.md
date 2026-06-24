@@ -227,6 +227,14 @@ atheris.Setup(sys.argv, TestOneInput)
 atheris.Fuzz()
 ```
 
+> **Native C extensions are a blind spot.** `atheris.instrument_imports()` instruments *Python bytecode*
+> only. If the target is a C extension (e.g. `ujson`, `lxml`, `Pillow`'s `_imaging`), atheris sees it as a
+> black box — the corpus barely grows and coverage looks flat even though the run is "working" (validated:
+> `ujson` ran millions of execs but the corpus stayed at 1). To actually fuzz native code, build the extension
+> with coverage + ASan via `atheris.instrument_func` / `atheris_no_libfuzzer` and a sanitizer-instrumented
+> build of the extension (Atheris docs: "Fuzzing Python extensions"). For a pure-Python target this doesn't
+> apply. Either way, disclose in the report whether the native layer was actually instrumented.
+
 Catch *expected* exceptions only; let `MemoryError`, `RecursionError`, segfaults, and unexpected types
 surface. `FuzzedDataProvider` is the idiomatic way to derive typed inputs.
 
