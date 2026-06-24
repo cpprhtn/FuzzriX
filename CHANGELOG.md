@@ -1,9 +1,30 @@
 # Changelog
 
-**English** · [한국어](CHANGELOG.ko.md)
-
 All notable changes to FuzzriX are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project uses semantic versioning.
+
+## [0.3.0] — 2026-06-24
+
+Skill tuned from research + a 5-language validation bench (no new structure — the
+playbook's *judgment* got sharper, backed by data).
+
+### Changed
+- **strategy-selection** — value_profile emphasized as the most consistent coverage
+  win (ablation); dictionary re-scoped to "when there's a string/magic gate"
+  (coverage-neutral on punctuation grammars like JSON).
+- **crash-triage** — the LLM analyst owns root cause (beats mechanical heuristics on
+  unsymbolized panics / deep call stacks); added an explicit "memory-safe runtime
+  (Python exception, Rust panic) = benign" classification rule.
+- **context-extraction** — reading source is *aiming, not detection*: predict the
+  suspicious operation, then aim harness/seed/dict at it; the engine confirms.
+- **coverage-iteration** — the coverage-loop payoff scales with target depth;
+  diagnose with `-print_coverage` before spending rounds.
+- **dockerfile-generation** — self-heal CMake-generated headers (e.g. `*_export.h`)
+  with a minimal export-macro stub.
+
+### Validated
+- 5-language OSS matrix (C · C++ · Rust · Go · Python) all build + fuzz; Go stack
+  exercised end-to-end (`go test -fuzz`).
 
 ## [0.2.0] — 2026-06-24
 
