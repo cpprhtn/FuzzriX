@@ -53,6 +53,7 @@ reproducer, a root-cause line, a severity, and a fix.
    | Check | Verdict |
    |---|---|
    | output contains an explicit `FuzzerSecurityIssue(Critical\|High\|Medium\|Low)` marker | use that explicit marker |
+   | **memory-safe runtime crash** — a Python uncaught exception (Atheris) or a Rust `panic` | **benign** (DoS — no memory corruption; the runtime caught it). *The same "index out of bounds" that is a security bug in C is benign here.* |
    | crash_type ∈ **non-security**: `Stack-overflow`, `Out-of-memory`, `Timeout`, `Floating-point-exception`, `Illegal-instruction`, `Unexpected-exit`, or a `Data race` / `Lock-order-inversion` (the last two matched by substring) | **benign** (DoS / resource — report, don't call it a vuln) |
    | UBSan crash_type ∈ `Divide-by-zero`, `Integer-overflow`, `Float-cast-overflow`, `Implicit-conversion`, `Invalid-bool-value` | **benign** |
    | UBSan crash_type ∈ `Bad-cast`, `Index-out-of-bounds`, `Incorrect-function-pointer-type`, `Object-size`, `Non-positive-vla-bound-value` | **security** |

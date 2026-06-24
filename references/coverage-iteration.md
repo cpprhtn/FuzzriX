@@ -30,6 +30,12 @@ limit you can only disclose (then record it — *cover it or flag it*).
 **uncovered**, the harness never reached them — that's your wall, named. (`-print_funcs=N` controls how many
 are listed.)
 
+> **The payoff scales with target depth — diagnose before you iterate.** Measured: adding a rich seed round
+> on a deep, many-function target (a recursive expression evaluator) roughly **doubled covered functions**
+> (28 → 56); on a shallow single-entry parser (cJSON's `Parse`) the same round barely moved coverage — its
+> first harness already reached the core. So `-print_coverage` first: if the core functions are already
+> covered, don't spend rounds; if they're uncovered, a seed/dict/deeper-entry round is a big lever.
+
 ## Diagnose the wall → prescribe the fix
 
 | Symptom | Likely wall | Fix (→ leaf) |
