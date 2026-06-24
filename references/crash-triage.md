@@ -106,6 +106,13 @@ reproducer, a root-cause line, a severity, and a fix.
    validation, integer-overflow guard, lifetime fix). Then **enforce-forward**: keep this harness in CI so a
    regression re-triggers it.
 
+   > **You (the LLM) own this step — it's where you beat a mechanical pass.** The deterministic parse gives
+   > you the crash frame, type, and dedup bucket cheaply, and that's enough for the *common* case (the fault
+   > frame is the bug). But the real root cause is often *not* the fault frame: a Rust panic carries no
+   > symbol, the fault sits in a tiny accessor whose caller is the actual bug, or the cause is a data flow a
+   > few frames up. Those need you to **read the source** and name the true culprit — measured to be exactly
+   > where mechanical heuristics stop and the LLM analyst adds the accuracy.
+
 ## Report shape
 
 Lead with a summary, then findings ordered by severity. Prose in the user's language; keep the machine bits

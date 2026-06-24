@@ -52,6 +52,13 @@ audit), and because **bugs live exactly where the author's intent and the code's
   tokens** (magic bytes, keywords, format markers). These feed [strategy-selection.md](strategy-selection.md),
   [corpus-management.md](corpus-management.md), and the [coverage loop](coverage-iteration.md) — getting past a
   format gate is often a bigger win than more run time.
+- **Predict, then aim — your reading is *aiming*, not detection.** When the source suggests a specific
+  dangerous operation (a numeric cast like `(unsigned int)(x)` that `NaN`/`Inf` breaks, a `memcpy` sized from
+  input, recursive descent with no depth cap), treat it as a **hypothesis** and aim the harness + seed + dict
+  straight at it — e.g. predict a `fac`/`ncr` cast bug → seed `fac(0/0)` to drive a `NaN` into it. You do
+  **not** declare it a bug; you point the engine at your hypothesis so it confirms or refutes it fast. In
+  practice a read-the-code prediction lands the exact bug — but only the engine proves it, prioritizes it, and
+  classifies it (security vs benign). Good hypotheses make the engine fast; the engine, not you, is the oracle.
 
 ## 3. Run the scanner
 
