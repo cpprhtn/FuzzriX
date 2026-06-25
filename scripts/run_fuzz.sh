@@ -13,7 +13,9 @@
 #   --binary PATH     fuzzer binary path inside the container (default: /fuzzer)
 #                     NOTE: must live OUTSIDE /out — this script bind-mounts the
 #                     host out-dir over /out, which masks anything built into it.
-#   --memory SIZE     docker --memory (default: 2g)
+#   --memory SIZE     docker --memory (default: 3g). libFuzzer's -rss_limit_mb is
+#                     derived ~1GB below this so it emits a clean oom-* artifact
+#                     instead of Docker OOM-killing the container (no artifact).
 #   --cpus N          docker --cpus (default: 2)
 #   --dict FILE       libFuzzer -dict (path inside the build context, copied in)
 #   --no-build        skip docker build (image already exists)
@@ -33,7 +35,7 @@ BUILD_DIR="$1"; OUT_DIR="$2"; shift 2
 SECONDS_CAP=120
 if [[ "${1:-}" =~ ^[0-9]+$ ]]; then SECONDS_CAP="$1"; shift; fi
 
-IMAGE=""; BINARY="/fuzzer"; MEMORY="2g"; CPUS="2"; DICT=""; DO_BUILD=1; NET="--network=none"
+IMAGE=""; BINARY="/fuzzer"; MEMORY="3g"; CPUS="2"; DICT=""; DO_BUILD=1; NET="--network=none"
 while [ $# -gt 0 ]; do
   case "$1" in
     --image)   IMAGE="$2"; shift 2;;
@@ -71,7 +73,17 @@ DICT_FLAG=""; [ -n "$DICT" ] && DICT_FLAG="-dict=/out/$(basename "$DICT")" && cp
 CONTAINER="$IMAGE-run"
 docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
 
-info "fuzzing '$IMAGE' for ${SECONDS_CAP}s  (mem=$MEMORY cpus=$CPUS net=${NET:-on})  out=$OUT_DIR"
+# Derive -rss_limit_mb ~1GB below the container memory cap so libFuzzer trips its
+# own clean oom-* artifact before Docker OOM-kills the container (which leaves none).
+case "$MEMORY" in
+  *g|*G) MEM_MB=$(( ${MEMORY%[gG]} * 1024 ));;
+  *m|*M) MEM_MB=${MEMORY%[mM]};;
+  *)     MEM_MB=$(( MEMORY / 1048576 ));;   # bare value = bytes (docker convention)
+esac
+RSS_LIMIT=$(( MEM_MB - 1024 ))
+[ "$RSS_LIMIT" -lt 512 ] && RSS_LIMIT=512
+
+info "fuzzing '$IMAGE' for ${SECONDS_CAP}s  (mem=$MEMORY rss=${RSS_LIMIT}m cpus=$CPUS net=${NET:-on})  out=$OUT_DIR"
 info "container name: $CONTAINER  (watch live: docker ps | grep $CONTAINER)"
 set +e
 docker run --name "$CONTAINER" \
@@ -80,7 +92,7 @@ docker run --name "$CONTAINER" \
   "$IMAGE" \
   "$BINARY" \
     -max_total_time="$SECONDS_CAP" \
-    -rss_limit_mb=2048 \
+    -rss_limit_mb="$RSS_LIMIT" \
     -timeout=25 \
     -print_final_stats=1 \
     -use_value_profile=1 \

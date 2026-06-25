@@ -34,15 +34,17 @@ SIG_SIGNALS = [
     (re.compile(r"\b(uint8_t|unsigned char|char|void)\s*\*\s*\w+\s*,\s*[^,)]*\b(size_t|size|len|n|count)\b"), 30,
      "takes a buffer + length"),
     (re.compile(r"\bFILE\s*\*"), 18, "takes a FILE*"),
-    (re.compile(r"\bstd::string\b|\bchar\s*\*\s*\w*(path|file|name)"), 16, "takes a string/path"),
+    (re.compile(r"\bstd::string\b|\bchar\s*\*\s*\w*(path|file|name|expr|input|text|data|query|str|buf|json|xml|yaml|src|msg)", re.I), 16, "takes a string/input"),
     (re.compile(r"\bstd::(vector|span)\s*<\s*(uint8_t|unsigned char|char|std::byte)"), 22, "takes a byte vector/span"),
     (re.compile(r"\bvoid\s*\*\s*\w+\s*,\s*[^,)]*\bsize"), 20, "takes (void*, size)"),
 ]
 
 # (regex on the function name, points, reason)
 NAME_SIGNALS = [
-    (re.compile(r"\b(parse|decode|deserialize|unpack|unmarshal)\w*", re.I), 26, "parser/decoder name"),
-    (re.compile(r"\b(read|load|import|scan|consume)\w*", re.I), 14, "input-reader name"),
+    # (?:\b|_) so a CamelCase/snake API name (cJSON_Parse, png_read_info) still matches,
+    # not just a leading-word match.
+    (re.compile(r"(?:\b|_)(parse|decode|deserialize|unpack|unmarshal)\w*", re.I), 26, "parser/decoder name"),
+    (re.compile(r"(?:\b|_)(read|load|import|scan|consume)\w*", re.I), 14, "input-reader name"),
     (re.compile(r"\w*(handler|process|dispatch)\b", re.I), 12, "handler/processor name"),
     (re.compile(r"\w*(packet|frame|header|message|record|chunk|token)\w*", re.I), 12, "protocol/format unit in name"),
     (re.compile(r"\b(from_bytes|from_buffer|from_string|fromjson|fromxml)\w*", re.I), 22, "from-bytes constructor"),
@@ -60,7 +62,10 @@ BODY_SIGNALS = [
 FUNC_DEF_RE = re.compile(
     r"^[ \t]*"
     r"(?:(?:static|inline|extern|EXPORT|__attribute__\([^)]*\)|[A-Z][A-Z0-9_]*API)\s+)*"  # qualifiers
-    r"(?P<ret>[A-Za-z_][\w:<>,\s\*&]*?[\s\*&])"                                            # return type
+    r"(?P<ret>"
+    r"(?:[A-Z][A-Z0-9_]*\s*\([^()]*\)\s+)"      # export-macro wrapping the return type: CJSON_PUBLIC(cJSON *)
+    r"|[A-Za-z_][\w:<>,\s\*&]*?[\s\*&]"          # OR a plain return type
+    r")"
     r"(?P<name>[A-Za-z_]\w*)\s*"                                                            # name
     r"\((?P<args>[^;{]*?)\)\s*"                                                             # args
     r"(?:const\s*)?(?:noexcept\s*)?\{",                                                     # opening brace
@@ -98,6 +103,16 @@ def score_function(name: str, signature: str, body: str) -> tuple[int, list[str]
     # an exported-looking name with no args is rarely a target
     if "(" in signature and signature.split("(", 1)[1].strip(") ") in ("", "void"):
         score -= 10
+    # Internal memory-management plumbing (allocators) matches buffer/size signals
+    # but isn't where *external* data enters — deprioritize.
+    if re.search(r"(realloc|malloc|calloc|_alloc\b|dealloc|_free\b|free$)", name, re.I):
+        score -= 20
+        reasons.append("allocator/plumbing (deprioritized)")
+    # Public (non-static) functions are the reachable API surface — the real entry
+    # points; static helpers are only reached *through* them. Boost them.
+    if not re.search(r"^\s*static\b|[\s*]static\b", signature):
+        score += 10
+        reasons.append("public API (external linkage)")
     return score, reasons
 
 

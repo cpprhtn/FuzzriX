@@ -43,7 +43,7 @@ below).
 | --- | --- | --- |
 | `-max_total_time=<s>` | none (run forever) | Wall-clock cap. The most important flag — always set it. |
 | `-timeout=<s>` | `25` — FuzzriX's choice; libFuzzer default is `1200` | Per-input limit. A single input exceeding this is written as `timeout-*` (hang / inf-loop bug). |
-| `-rss_limit_mb=<n>` | `2560` — FuzzriX value; libFuzzer default is `2048` | Kill if RSS exceeds this; pairs with `--memory`. `0` = unlimited (don't use in a capped container). |
+| `-rss_limit_mb=<n>` | **derived ~1 GB below `--memory`** (`run_fuzz.sh` default `--memory=3g` → `2048`); libFuzzer default is `2048` | Kill if RSS exceeds this; **must stay below `--memory`** so libFuzzer emits a clean `oom-*` artifact instead of Docker OOM-killing the container (no artifact). `0` = unlimited (don't use in a capped container). |
 | `-artifact_prefix=<dir>/` | cwd | Where `crash-* / oom-* / timeout-* / leak-* / slow-unit-*` land. **Must** end with a trailing slash. |
 | `-print_final_stats=1` | off | Emit `stat::` telemetry lines at exit. Always on. |
 | `-use_value_profile=1` | off | Value-profile feedback (gets past `memcmp`/magic-number gates). FuzzriX baseline — near-free coverage. |

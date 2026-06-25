@@ -1,7 +1,7 @@
 ---
 name: fuzzrix
 description: 'This skill should be used when the user asks to "fuzz this project", "set up fuzzing", "write a fuzz harness", "find memory bugs / crashes", "add libFuzzer/AFL++/Atheris", "auto-generate a fuzzer", "run continuous fuzzing", or mentions "FuzzriX / 퍼징 / 퍼즈 하네스". FuzzriX is an AI-driven, universal fuzzing accelerator: it profiles a target repo, extracts high-risk target functions (file/network/parsing/string sinks), generates a fuzz harness + a Dockerfile, builds them in an isolated container, self-heals compile errors in a feedback loop, runs the fuzzer, and reports triaged crashes with reproducers and fixes.'
-version: 0.10.0
+version: 0.10.1
 allowed-tools: Read Grep Glob Bash Write Edit Skill AskUserQuestion WebSearch WebFetch TodoWrite
 ---
 
@@ -138,8 +138,9 @@ Detect the stack by build files: `CMakeLists.txt`/`Makefile`/`*.c`/`*.cc`/`*.cpp
    Watch the stderr signals, classify the exit code, extract metrics, watch for coverage plateau. →
    [fuzzing-run.md](references/fuzzing-run.md)
 7. **Improve coverage (bounded loop — the biggest performance lever)** — a first harness reaches little. Run a
-   short smoke run, read where the engine is stuck (`cov:` plateau, `-print_coverage` uncovered functions),
-   remove **one** wall per round (deeper entry / seed / dict / flag), re-run. Bounded (default 2–3 rounds),
+   short smoke run, read where the engine is stuck (`cov:` plateau; rank uncovered/partly-covered functions
+   with `… -print_coverage=1 | python3 scripts/cover_gaps.py - --src /src`), remove **one** wall per round
+   (deeper entry / seed / dict / flag), re-run. Bounded (default 2–3 rounds),
    then one full-length run. You widen the engine's *reach*; the engine still finds the bugs. →
    [coverage-iteration.md](references/coverage-iteration.md)
 8. **Triage & analyze (the analyst pillar)** — for each crash: minimize the testcase, get the sanitizer

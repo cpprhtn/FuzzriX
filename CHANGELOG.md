@@ -3,6 +3,57 @@
 All notable changes to FuzzriX are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project uses semantic versioning.
 
+## [0.10.1] — 2026-06-25
+
+A 6-round verification & hardening pass over everything shipped so far — running
+the helpers on edge cases, building all three templates, scanning real targets,
+checking flag defaults against the live engine, and re-reading the docs.
+
+### Fixed
+- **crash classification gaps** (found by building the cpp template and feeding real
+  sanitizer output through the analyst):
+  - a **UBSan `runtime error:` now wins over a co-occurring `libFuzzer: deadly signal`**
+    — previously a UBSan-caught out-of-bounds that aborted was mislabeled a benign
+    "abort" instead of a security memory bug;
+  - **LeakSanitizer** is parsed as `memory-leak` (was the garbage type `detected`);
+  - **SEGV** is split by fault address — near-null ⇒ benign null-deref, non-null ⇒
+    security (wild pointer); **abort / assertion** failures are named and classified;
+  - UBSan memory-unsafety (`index … out of bounds`, object-size, bad-cast) classifies
+    as security (the spaced spelling was slipping through).
+  - **double-free** was parsed as the filler word `attempting` (so the CWE-415
+    mapping never fired) — the parser now takes the normalized type from the
+    `SUMMARY` line.
+  These keep the local analyst core consistent with `crash-triage.md`.
+- **`scripts/scan_targets.py` — it missed the real entry points.** Export-macro-wrapped
+  public functions (`CJSON_PUBLIC(cJSON *) cJSON_ParseWithLength(...)`) weren't detected
+  at all (cJSON/libpng/sqlite/openssl all wrap their API this way); now they are, and
+  rank #1. Also: internal allocators (`internal_realloc`) are deprioritized, public
+  (non-`static`) functions get a surface boost, and the name regex now matches a
+  CamelCase/`_`-joined `Parse` (not just a leading word). On cJSON, `cJSON_ParseWithLength`
+  went from *undetected* to the top result.
+- **`scripts/run_fuzz.sh` — the OOM-headroom invariant was violated.** It set
+  `--memory=2g` *and* `-rss_limit_mb=2048` (equal — zero headroom), so a memory-heavy
+  target got Docker-OOM-killed with **no artifact** instead of a clean libFuzzer `oom-*`.
+  `-rss_limit_mb` is now derived ~1 GB below `--memory` (default bumped to `3g` ⇒ rss
+  `2048`, preserving fuzzing room).
+- **`scripts/cover_gaps.py`** — a missing log file now prints a clean error (exit 2)
+  instead of a traceback, matching the other helpers.
+
+### Changed
+- **crash-triage** — added the `Memory-leak` and `assertion / abort` benign rows.
+- **fuzzing-run** — the `-rss_limit_mb` row now states it's derived ~1 GB below
+  `--memory` (was a stale `2560` that didn't match the runner).
+- **SKILL.md** — the coverage step now names `cover_gaps.py` (entry-point sync).
+
+### Verified
+- All three starter templates build end-to-end as shipped: `cpp-libfuzzer` (caught
+  the injected OOB), `jvm-jazzer` (caught snakeyaml's RCE), `python-atheris`
+  (structure + the baked-in atheris-install fixes).
+- Every libFuzzer flag default the docs cite (`entropic=1`, `use_value_profile=0`,
+  `rss_limit_mb=2048`, `timeout=1200`, …) checked against `‑help=1` on the live engine.
+- All `fuzzrix/*` modules import; `report.to_markdown` / `regress.generate` produce
+  sound output. Full suite green (93 tests).
+
 ## [0.10.0] — 2026-06-25
 
 New deterministic helper — **coverage-gap diagnosis** — gives the coverage loop

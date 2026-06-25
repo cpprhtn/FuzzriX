@@ -114,7 +114,14 @@ def _main(argv: Optional[list[str]] = None) -> int:
     p.add_argument("--top", type=int, default=20)
     p.add_argument("--pretty", action="store_true")
     args = p.parse_args(argv)
-    text = sys.stdin.read() if args.log == "-" else Path(args.log).read_text(errors="replace")
+    if args.log == "-":
+        text = sys.stdin.read()
+    else:
+        path = Path(args.log)
+        if not path.is_file():
+            print(f"error: file not found: {path}", file=sys.stderr)
+            return 2
+        text = path.read_text(errors="replace")
     report = analyze(parse_coverage(text), src=args.src, top=args.top)
     print(_pretty(report) if args.pretty else json.dumps(report, indent=2))
     return 0
