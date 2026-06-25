@@ -3,6 +3,30 @@
 All notable changes to FuzzriX are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project uses semantic versioning.
 
+## [0.4.1] — 2026-06-24
+
+A correctness patch for the validation methodology: a single timed fuzz run is
+noise, and one of our conclusions was drawn from that noise.
+
+### Fixed
+- **strategy-selection** — the dictionary verdict was wrong. A single-trial ablation
+  made a dict look *coverage-neutral or slightly negative* on cJSON; a 3-trial median
+  shows it is a small but consistent **positive** (+~5% features), and a large win
+  behind a string/magic gate. Re-scoped from "skip on punctuation grammars" to
+  "always worth applying; biggest behind a string/magic gate."
+
+### Changed
+- **strategy-selection** Discipline now mandates comparing strategies over **≥3
+  trials on the median**, never one run — a fixed `-seed` does not remove the
+  several-percent run-to-run swing that can flip a verdict.
+- **ablation/bench** — `--trials N` reports the median coverage/features (crash =
+  found in any trial); single-trial output is documented as a smoke check, not a
+  measurement.
+
+### Notes
+- `docs/EVALUATION.md` "Honest limits" now records the stochasticity, short-time-cap,
+  and `corpus_size`-is-a-proxy caveats explicitly.
+
 ## [0.4.0] — 2026-06-24
 
 Validation bench widened to a 5-language × multi-domain matrix; the gaps it

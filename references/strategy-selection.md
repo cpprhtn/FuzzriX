@@ -17,7 +17,7 @@ needs cloud infra or a custom-built engine.
 | Strategy | How it's applied | FuzzriX take |
 |---|---|---|
 | **value_profile** | `-use_value_profile=1` | **On by default** (libFuzzer ships it *off*; FuzzriX flips it on). Tracks interesting compared values (e.g. `memcmp`/magic-number checks) to get past hard equality gates. In ablation it was the **most consistent win** — it lifts *feature* coverage substantially on gated parsers (often the single biggest knob). Not free: libFuzzer documents up to ~2x slowdown and the corpus can grow several times — worth it for parsers/decoders, drop it if exec/s tanks on a hot target. Needs `-fsanitize-coverage=trace-cmp` (on by default as part of `-fsanitize=fuzzer`). |
-| **recommended_dict** | `-dict=<file>` | **On when there's a gate to unlock — not reflexively.** A token dictionary (magic bytes, keywords) is a big win when the target gates on **specific strings/magics** (e.g. `memcmp(data,"MAGIC",..)`). It helps far less on formats already built from common punctuation (JSON `{}[]:,"`), where the mutator finds the tokens anyway — ablation showed a dict can be **coverage-neutral or slightly negative** there. So: synthesize/apply a dict when you see a string/magic gate; skip it for punctuation-only grammars. Look for `<binary>.dict` beside the target; else mine string/byte literals. Validate the file exists before passing the flag — stock libFuzzer errors on a missing dict. |
+| **recommended_dict** | `-dict=<file>` | **A small consistent help; a *huge* win behind a string/magic gate.** A token dictionary (magic bytes, keywords) gives the largest lift when the target gates on **specific strings/magics** (`memcmp(data,"MAGIC",..)`) — there it's the difference between reaching the bug or not. On formats already built from common punctuation (JSON `{}[]:,"`) the win is smaller but **still positive** (a 3-trial ablation on cJSON measured +~5% features with a dict; an earlier *single*-trial run wrongly looked negative — single trials are noise, see Discipline). So: always worth applying when a dict exists or is cheap to mine; prioritize synthesizing one when you see a string/magic gate. Look for `<binary>.dict` beside the target; else mine string/byte literals. Validate the file exists before passing the flag — stock libFuzzer errors on a missing dict. |
 | **fixed max_len** | `-max_len=<N>` | **Fix it, don't randomize.** Pin a single `-max_len` (e.g. the format's realistic max, or 4096) so the run is reproducible. Omit entirely to let libFuzzer auto-grow. |
 | **corpus_subset** | pass a *subset dir* as the corpus arg (no flag) | **Only if the corpus is large.** Pick one fixed size (e.g. 100) and only subset when the corpus clearly exceeds it — faster startup, less I/O. New finds still merge back. No-op for a small/empty corpus. |
 | **fork** | `-fork=<N>` | **standard/deep only, capped to `--cpus`.** Parallel fuzzing processes. Pin a deterministic, capped `N = min(--cpus, 4)` — never the host core count (it would blow the container's CPU cap). Off in quick mode for fast startup. |
@@ -98,6 +98,11 @@ differential/stateful axes are harness-shape decisions, not libFuzzer flags — 
   blows the resource gate is a bug, not a strategy.
 - **Don't fake a strategy.** Enabling `-dict` with a missing file, or claiming a sanitizer/leak knob the build
   doesn't actually have, is a no-op that still gets reported as "on" — that's a fabricated pass. Validate first.
+- **Compare over repeats, not one run.** Fuzzing is stochastic: a single timed run's `cov`/`ft` count swings
+  several percent between *identical* runs (a fixed `-seed` doesn't remove thread/timing nondeterminism). That
+  swing is enough to flip a strategy verdict — a single-trial ablation made a dict look *negative* on cJSON;
+  over 3 trials (median) it was clearly positive. So before concluding a knob helps or hurts, run each config
+  **≥3 times and take the median**. Never tune a strategy off one number.
 
 Strategy chosen → build & heal ([self-healing.md](self-healing.md)) → run with these flags
 ([fuzzing-run.md](fuzzing-run.md)).
