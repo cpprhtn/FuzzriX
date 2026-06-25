@@ -235,8 +235,8 @@ atheris.Fuzz()
 > build of the extension (Atheris docs: "Fuzzing Python extensions"). For a pure-Python target this doesn't
 > apply. Either way, disclose in the report whether the native layer was actually instrumented.
 
-Catch *expected* exceptions only; let `MemoryError`, `RecursionError`, segfaults, and unexpected types
-surface. `FuzzedDataProvider` is the idiomatic way to derive typed inputs.
+Per the managed-runtime rule above: let `MemoryError`, `RecursionError`, segfaults, and unexpected exception
+types surface. `FuzzedDataProvider` is the idiomatic way to derive typed inputs.
 
 ---
 

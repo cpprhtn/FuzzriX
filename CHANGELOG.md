@@ -3,6 +3,25 @@
 All notable changes to FuzzriX are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project uses semantic versioning.
 
+## [0.8.1] — 2026-06-25
+
+Documentation audit: fix drift, tighten verbose passages, verify every link.
+
+### Fixed
+- **SKILL.md & AGENTS.md drift** — both entry points were missing the **Java/JVM
+  (Jazzer)** stack (added in 0.7.0) and the **`mine_dict.py`** helper (0.8.0). Added
+  the JVM stack row + `pom.xml`/`build.gradle` detection, the dict-miner to the
+  synthesis step and the Codex helper list, and the `python-atheris`/`jvm-jazzer`
+  templates to AGENTS.md.
+
+### Changed
+- **strategy-selection** — the dictionary cell was a 1,300-char run-on; halved it
+  without losing the guidance (mine with `mine_dict.py`, the stb_image result, the
+  single-trial-noise caveat now points to Discipline instead of re-explaining it).
+- **harness-generation** — dropped a managed-runtime "catch only expected exceptions"
+  restatement in the Python section that the engine-model rule already covers.
+- Verified all reference/SKILL/AGENTS cross-links and anchors resolve.
+
 ## [0.8.0] — 2026-06-25
 
 New deterministic helper — **dictionary mining** — closes the gap between

@@ -51,8 +51,11 @@ deep-reaching) → **coverage coach** (clear the wall the engine is stuck behind
 - `python3 scripts/scan_targets.py <repo>` — identify the fuzzing surface: candidate entry points where
   external data enters (tree-sitter if installed, regex heuristics otherwise). JSON output. *Not* a vuln
   scanner — it ranks where to point a fuzzer, not what is "buggy".
+- `python3 scripts/mine_dict.py <repo> -o fuzz.dict` — mine a libFuzzer dictionary (magic bytes + string
+  literals) from the target's source to get past format gates; pass it as `-dict=fuzz.dict`.
 - `bash scripts/run_fuzz.sh <build-dir> <out-dir> [seconds]` — build the Docker image and run the fuzzer with
   caps, mounting the output dir for corpus/crashes.
-- `templates/cpp-libfuzzer/` — starting Dockerfile + harness for C/C++ libFuzzer.
+- `templates/{cpp-libfuzzer,python-atheris,jvm-jazzer}/` — starting Dockerfile + harness per stack
+  (C/C++ libFuzzer · Python Atheris · Java/JVM Jazzer).
 
 Leave the generated harness + Dockerfile + a one-line re-run command in the repo so fuzzing becomes permanent.

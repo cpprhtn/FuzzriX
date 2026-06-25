@@ -1,7 +1,7 @@
 ---
 name: fuzzrix
 description: 'This skill should be used when the user asks to "fuzz this project", "set up fuzzing", "write a fuzz harness", "find memory bugs / crashes", "add libFuzzer/AFL++/Atheris", "auto-generate a fuzzer", "run continuous fuzzing", or mentions "FuzzriX / 퍼징 / 퍼즈 하네스". FuzzriX is an AI-driven, universal fuzzing accelerator: it profiles a target repo, extracts high-risk target functions (file/network/parsing/string sinks), generates a fuzz harness + a Dockerfile, builds them in an isolated container, self-heals compile errors in a feedback loop, runs the fuzzer, and reports triaged crashes with reproducers and fixes.'
-version: 0.8.0
+version: 0.8.1
 allowed-tools: Read Grep Glob Bash Write Edit Skill AskUserQuestion WebSearch WebFetch TodoWrite
 ---
 
@@ -91,11 +91,12 @@ but may need you to fill in the harness pattern.
 | **C / C++** (CMake, Makefile, Meson) | libFuzzer (default) or AFL++ | [harness-generation.md](references/harness-generation.md) → [dockerfile-generation.md](references/dockerfile-generation.md) |
 | **Python** | Atheris | [templates/python-atheris/](templates/python-atheris/) → [harness-generation.md](references/harness-generation.md#python-atheris) |
 | **Rust** (Cargo) | cargo-fuzz | [harness-generation.md](references/harness-generation.md#rust-cargo-fuzz) |
+| **Java / JVM** (Kotlin, Scala) | Jazzer | [templates/jvm-jazzer/](templates/jvm-jazzer/) → [harness-generation.md](references/harness-generation.md#jvm-jazzer) |
 | **Go** | native `go test -fuzz` | [harness-generation.md](references/harness-generation.md#go-native) |
 | **Other / unsure** | profile first | [context-extraction.md](references/context-extraction.md) |
 
 Detect the stack by build files: `CMakeLists.txt`/`Makefile`/`*.c`/`*.cc`/`*.cpp` → C/C++;
-`setup.py`/`pyproject.toml`/`*.py` → Python; `Cargo.toml` → Rust; `go.mod` → Go.
+`setup.py`/`pyproject.toml`/`*.py` → Python; `Cargo.toml` → Rust; `pom.xml`/`build.gradle` → Java/JVM; `go.mod` → Go.
 
 ---
 
@@ -121,9 +122,9 @@ Detect the stack by build files: `CMakeLists.txt`/`Makefile`/`*.c`/`*.cc`/`*.cpp
    data-from-outside × memory-unsafety. Use the scanner: `python3 scripts/scan_targets.py <repo>` (tree-sitter
    if available, regex heuristics otherwise). → [context-extraction.md](references/context-extraction.md)
 3. **Pick a strategy** — decide which libFuzzer knobs to turn for this target (value_profile is the baseline;
-   add a dictionary for structured formats, fork for depth, a fixed `-max_len` for reproducibility) and
-   **emit the rationale**. Deterministic and reproducible, not randomized like a fuzzing fleet. →
-   [strategy-selection.md](references/strategy-selection.md)
+   add a dictionary for structured formats — mine one with `python3 scripts/mine_dict.py <repo> -o fuzz.dict`;
+   fork for depth, a fixed `-max_len` for reproducibility) and **emit the rationale**. Deterministic and
+   reproducible, not randomized like a fuzzing fleet. → [strategy-selection.md](references/strategy-selection.md)
 4. **Generate harness + Dockerfile (dual artifact)** — for the top target(s), write the fuzz entry point
    (e.g. `LLVMFuzzerTestOneInput` for libFuzzer) and a Dockerfile based on a trusted fuzzing base image
    (`aflplusplus/aflplusplus`, an OSS-Fuzz base, or a clang image) that layers the project source + harness
