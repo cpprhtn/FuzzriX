@@ -82,7 +82,7 @@ or remote hosts. It runs target code only inside Docker and caps CPU/RAM/disk/ti
 
 ## Status
 
-**v0.5.0.** The thesis is *"LLM = fuzzing engineer + crash analyst."* Working today: the Docker-isolated
+**v0.5.1.** The thesis is *"LLM = fuzzing engineer + crash analyst."* Working today: the Docker-isolated
 engine, self-healing builds, multi-stack harness synthesis (C/C++ · Python/Atheris · Rust/cargo-fuzz),
 non-trivial harness shapes (round-trip · differential · stateful · checksum-gate), strategy selection, corpus
 management, and a coverage-improvement loop — validated on heavy domains (crypto/TLS, media/codec). Version

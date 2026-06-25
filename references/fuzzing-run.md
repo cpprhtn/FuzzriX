@@ -167,12 +167,17 @@ integer values). The stats libFuzzer actually prints are:
 
 These are the machine-readable numbers behind the README's "evaluable by design" claim — emit them with the report.
 
-> **Coverage is reported differently per engine.** Only native libFuzzer (C/C++ and Rust cargo-fuzz) prints
-> `cov:`/`ft:`. **atheris** prints only `corp: N/...` (no `cov:` number) and **Go**'s native fuzzer reports
-> `new interesting: N (total: M)`. So when `cov:` is absent, fall back to the corpus/interesting-input count
-> as a coverage *proxy* — don't report `cov` as 0/None and call the run dead. Also: atheris only instruments
-> *Python* code — a native C extension (e.g. `ujson`) stays a black box and the corpus barely grows unless the
-> extension itself is built with coverage (see [harness-generation.md](harness-generation.md#python-atheris)).
+> **Coverage is reported differently per engine — and a proxy must be labelled as one.** Only native libFuzzer
+> (C/C++, Rust cargo-fuzz, and atheris underneath) prints real edge coverage via `cov:`/`ft:`. **atheris** on a
+> pure-native target prints `corp: N/...` with `cov:` stuck near 0; **Go**'s native fuzzer prints no edge count
+> at all — `elapsed: …, execs: N, new interesting: K (total: M)`, where `M` is the corpus size. So when `cov:`
+> is absent, fall back to the corpus/interesting count (libFuzzer `corp:` or Go's `(total: M)`) as a coverage
+> *proxy* — don't report `cov` as 0/None and call the run dead — **but record that it's a proxy, not edges.**
+> A corpus count tracks progress *directionally* within one engine; it is **not** an edge count and is not
+> comparable across engines. (FuzzriX's runner tags this as `coverage_source = edges | libfuzzer-corpus |
+> go-corpus`.) Also: atheris only instruments *Python* code — a native C extension (e.g. `ujson`) stays a black
+> box and the corpus barely grows unless the extension itself is built with coverage (see
+> [harness-generation.md](harness-generation.md#python-atheris)).
 
 ## Engine variations
 

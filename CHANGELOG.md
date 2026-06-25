@@ -3,6 +3,22 @@
 All notable changes to FuzzriX are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project uses semantic versioning.
 
+## [0.5.1] — 2026-06-25
+
+A measurement patch: make per-engine coverage honest — parse Go's proxy, and
+always label whether a number is real edge coverage or a corpus-size proxy.
+
+### Fixed
+- **fuzzing-run** — Go's native fuzzer emits no edge count; its corpus size lives in
+  `new interesting: K (total: M)`, which the parser now reads (previously Go reported
+  no coverage at all). The atheris/Go fallback is now explicitly tagged as a *proxy*,
+  not edge coverage, and called out as non-comparable across engines.
+
+### Changed
+- **fuzzing-run** — the per-engine coverage note now spells out the three sources
+  (`edges` from libFuzzer `cov:`, `libfuzzer-corpus`, `go-corpus`) and that a corpus
+  count tracks progress only *directionally within one engine*.
+
 ## [0.5.0] — 2026-06-25
 
 Heavy domains: the playbook learns the harness *shapes* and build moves that
