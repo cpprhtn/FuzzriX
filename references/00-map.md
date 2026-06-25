@@ -41,6 +41,7 @@ whole tree.
 | [`scripts/scan_targets.py`](../scripts/scan_targets.py) | `python3 scripts/scan_targets.py <repo>` → ranked candidate target functions (JSON) |
 | [`scripts/mine_dict.py`](../scripts/mine_dict.py) | `python3 scripts/mine_dict.py <repo> -o fuzz.dict` → libFuzzer dict of magics/keywords mined from source (gets past format gates — see [strategy-selection.md](strategy-selection.md)) |
 | [`scripts/run_fuzz.sh`](../scripts/run_fuzz.sh) | `bash scripts/run_fuzz.sh <build-dir> <out-dir> [seconds]` → docker build + capped run |
+| [`scripts/cover_gaps.py`](../scripts/cover_gaps.py) | `… /fuzzer -print_coverage=1 \| python3 scripts/cover_gaps.py - --src /src` → ranks frontier / unreached functions to drive the coverage loop ([coverage-iteration.md](coverage-iteration.md)) |
 
 ## Templates
 

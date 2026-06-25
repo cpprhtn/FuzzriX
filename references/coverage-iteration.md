@@ -28,7 +28,18 @@ limit you can only disclose (then record it — *cover it or flag it*).
 
 `-print_coverage=1` is the highest-signal tool: if the target's core parser/decoder functions show up
 **uncovered**, the harness never reached them — that's your wall, named. (`-print_funcs=N` controls how many
-are listed.)
+are listed.) Its output is a wall of text, so pipe it through
+**[`scripts/cover_gaps.py`](../scripts/cover_gaps.py)** to rank it into where to aim next:
+
+```bash
+docker run --rm fuzzrix-<t> /fuzzer -runs=20000 -print_coverage=1 2>&1 \
+  | python3 scripts/cover_gaps.py - --src /src --pretty
+```
+
+It splits the functions into **frontier** (entered but partly covered, ranked by *uncovered edges* — you're at
+the door, a seed/dict/value_profile nudge unlocks these cheaply) and **unreached** (never entered, ranked by
+size — a big gated region needing a new seed/dict, or a sign the harness shape never calls that API). Push the
+frontier first.
 
 > **The payoff scales with target depth — diagnose before you iterate.** Measured: adding a rich seed round
 > on a deep, many-function target (a recursive expression evaluator) roughly **doubled covered functions**

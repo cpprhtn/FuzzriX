@@ -55,6 +55,8 @@ deep-reaching) → **coverage coach** (clear the wall the engine is stuck behind
   literals) from the target's source to get past format gates; pass it as `-dict=fuzz.dict`.
 - `bash scripts/run_fuzz.sh <build-dir> <out-dir> [seconds]` — build the Docker image and run the fuzzer with
   caps, mounting the output dir for corpus/crashes.
+- `… /fuzzer -print_coverage=1 | python3 scripts/cover_gaps.py - --src /src` — rank uncovered / partly-covered
+  target functions (frontier vs unreached) to drive the coverage-improvement loop.
 - `templates/{cpp-libfuzzer,python-atheris,jvm-jazzer}/` — starting Dockerfile + harness per stack
   (C/C++ libFuzzer · Python Atheris · Java/JVM Jazzer).
 

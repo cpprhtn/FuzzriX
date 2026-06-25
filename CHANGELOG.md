@@ -3,6 +3,24 @@
 All notable changes to FuzzriX are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project uses semantic versioning.
 
+## [0.10.0] — 2026-06-25
+
+New deterministic helper — **coverage-gap diagnosis** — gives the coverage loop
+(the top performance lever) a tool, not just prose.
+
+### Added
+- **`scripts/cover_gaps.py`** — parses libFuzzer `-print_coverage=1` into a ranked
+  plan: **frontier** (functions entered but partly covered, ranked by uncovered
+  edges — push these first with a seed/dict nudge) vs **unreached** (never entered,
+  ranked by size — a gated region needing a new seed/dict, or a harness-shape gap).
+  `--src` drops libc/system noise; handles C++ demangled names. Wired into
+  `coverage-iteration.md`, `00-map.md`, `CLAUDE.md`, and `AGENTS.md`.
+
+### Validated
+- On the cJSON image it cleanly surfaced the frontier (`parse_value` 309/696,
+  `parse_string` 71/220 — where to push) and the unreached API (`cJSON_Compare`,
+  `cJSON_Duplicate` — never called by a parse-only harness). +4 tests (81 total).
+
 ## [0.9.0] — 2026-06-25
 
 Magma multi-target ground-truth integration (the external-validity benchmark).

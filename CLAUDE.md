@@ -35,7 +35,7 @@ analysis is a baseline for "what's a real bug vs intended rejection"; the engine
   `crash-triage.md`, `strategy-selection.md`, `corpus-management.md`, `coverage-iteration.md`) carry exact
   flags/constants; when editing them, re-verify a claimed flag/default against the official libFuzzer docs
   rather than from memory.
-- `scripts/` — deterministic helpers (`scan_targets.py`, `mine_dict.py`, `run_fuzz.sh`). These are the only executable
+- `scripts/` — deterministic helpers (`scan_targets.py`, `mine_dict.py`, `run_fuzz.sh`, `cover_gaps.py`). These are the only executable
   code FuzzriX owns.
 - `templates/` — starter dual-artifacts (harness + Dockerfile) per stack: `cpp-libfuzzer/`,
   `python-atheris/`. The agent copies these into a target repo's `fuzz/` build context and fills in
@@ -64,6 +64,10 @@ python3 scripts/mine_dict.py <repo> --pretty       # ranked, with reasons
 bash scripts/run_fuzz.sh <build-dir> <out-dir> [seconds]   # default 120s
 # Self-heal on build failure: read <out-dir>/build.log, fix harness/Dockerfile, re-run. The script
 # never fixes builds itself — that is the agent's job (references/self-healing.md).
+
+# Diagnose coverage to drive the iteration loop (the top lever): rank uncovered/partly-covered
+# target functions ("frontier" to push next vs "unreached" gated regions).
+docker run --rm <img> /fuzzer -runs=20000 -print_coverage=1 2>&1 | python3 scripts/cover_gaps.py - --src /src --pretty
 ```
 
 Requirements: **Docker is a hard prerequisite** (every build/run is containerized — never run target

@@ -79,10 +79,10 @@ FuzzriX는 **본인이 소유했거나 테스트 권한이 있는 코드**를 **
 
 ## 상태
 
-**v0.9.0.** 핵심 명제는 *"LLM = 퍼징 엔지니어 + 크래시 분석가"*. 현재 동작: Docker 격리 엔진, 자가치유
+**v0.10.0.** 핵심 명제는 *"LLM = 퍼징 엔지니어 + 크래시 분석가"*. 현재 동작: Docker 격리 엔진, 자가치유
 빌드, 멀티 스택 harness 합성(C/C++ · Python/Atheris · Rust/cargo-fuzz · **Java/JVM/Jazzer** · Go),
 비단순 harness 형태(round-trip · differential · stateful · checksum-gate), 전략 선택, 코퍼스 관리,
-결정론적 사전(dictionary) 마이닝, 커버리지 개선 루프 — 무거운 분야(crypto/TLS, media/codec)와
+결정론적 사전(dictionary) 마이닝, 커버리지 갭 진단, 커버리지 개선 루프 — 무거운 분야(crypto/TLS, media/codec)와
 **실제 외부 CVE**(libxml2 heap-overflow를
 analyst 4/4로 재발견; snakeyaml CVE-2022-1471 RCE를 JVM 스택에서 포착)에서 검증됨. 버전 이력:
 [CHANGELOG.md](CHANGELOG.md).
