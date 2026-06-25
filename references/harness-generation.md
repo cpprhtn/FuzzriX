@@ -256,6 +256,74 @@ Scaffold with `cargo fuzz init` + `cargo fuzz add <name>`; the harness lives in 
 
 ---
 
+## Harness shapes — beyond feed-bytes-to-one-parser {#harness-shapes}
+
+The default shape (raw bytes → one decode call) finds bugs in *parsers*. Heavier
+domains — **crypto/TLS, media/codecs, serialization** — usually need a different
+*shape* to expose bugs or to get past a self-check. Pick the shape during
+threat-modeling, then synthesize it; this is the "differential/stateful axis"
+[strategy-selection.md](strategy-selection.md) defers here.
+
+**1. Round-trip (the cheapest oracle).** When a lib both encodes and decodes,
+assert the round-trip identity — a mismatch is a bug the parser alone never
+signals (silent corruption, not a crash). Canonical for codecs, serializers,
+compression, big-int/ASN.1:
+
+```cpp
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
+    Obj *o = decode(data, size);
+    if (!o) return 0;                       // rejecting malformed input is fine
+    std::vector<uint8_t> re = encode(o);    // o -> bytes
+    Obj *o2 = decode(re.data(), re.size()); // bytes -> o2 ; must succeed + match
+    assert(o2 && equal(o, o2));             // ASan/abort flags the divergence
+    free_obj(o); free_obj(o2);
+    return 0;
+}
+```
+
+**2. Differential (two implementations, one input).** Feed the *same* bytes to two
+independent decoders and compare outputs/return codes; a disagreement is a bug in
+one of them. The standard way to fuzz crypto/TLS and format parsers without a spec
+oracle (e.g. two X.509 / two JSON / two PNG decoders). Compare *normalized*
+outputs (canonical form, sorted), and treat "both reject" / "both accept+equal" as
+the only OK states — accept-vs-reject is the finding.
+
+**3. Structure-aware / multi-stage (stateful protocols).** A TLS/SSH/QUIC handshake
+or a multi-frame container won't be reached by one flat buffer — the target gates
+each step on the previous. Split the input into a *script* of steps with
+`FuzzedDataProvider`, driving the state machine:
+
+```cpp
+FuzzedDataProvider fdp(data, size);
+Conn *c = conn_new();
+while (fdp.remaining_bytes() > 0) {
+    auto msg = fdp.ConsumeRandomLengthString();      // one protocol record
+    if (feed_record(c, msg.data(), msg.size()) != OK) break;
+}
+conn_free(c);
+```
+
+For deeply structured inputs (media containers, protobufs) consider a grammar:
+libprotobuf-mutator (`-fsanitize=fuzzer` + `LLVMFuzzerMutate`) mutates a typed
+message instead of raw bytes, so every input is structurally valid and the fuzzer
+spends its budget on *semantics*, not on re-discovering the format.
+
+**4. Self-check gates (checksum / MAC / signature).** A CRC, length-prefix, HMAC,
+or signature check rejects ~every mutation before the interesting code runs (you'll
+see `cov` flat in [coverage-iteration.md](coverage-iteration.md)). In order of
+preference: ① build with the project's fuzz mode that stubs the check
+(`-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION` is the libFuzzer convention; many libs
+have an equivalent), ② recompute the checksum *inside* the harness before calling
+the target (parse field, fix CRC, then decode), or ③ if neither is possible, record
+it as a **disclosed coverage limit**, not a clean run. Never just leave the fuzzer
+stuck behind a MAC and report "no bugs."
+
+**Use the project's own fuzzers when they exist.** OpenSSL (`fuzz/`), ffmpeg
+(`tools/target_dec_fuzzer.c`), mbedTLS (`programs/fuzz/`), and most OSS-Fuzz-onboarded
+libs ship maintained libFuzzer harnesses already in the shape above — building those
+beats hand-writing one. Your job becomes the *build* ([dockerfile-generation.md](dockerfile-generation.md))
++ corpus + triage, not harness authoring.
+
 ## Go — native fuzzing {#go-native}
 
 ```go

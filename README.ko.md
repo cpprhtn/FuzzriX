@@ -79,9 +79,10 @@ FuzzriX는 **본인이 소유했거나 테스트 권한이 있는 코드**를 **
 
 ## 상태
 
-**v0.4.1.** 핵심 명제는 *"LLM = 퍼징 엔지니어 + 크래시 분석가"*. 현재 동작: Docker 격리 엔진, 자가치유
-빌드, 멀티 스택 harness 합성(C/C++ · Python/Atheris · Rust/cargo-fuzz), 전략 선택, 코퍼스 관리,
-커버리지 개선 루프. 버전 이력: [CHANGELOG.md](CHANGELOG.md).
+**v0.5.0.** 핵심 명제는 *"LLM = 퍼징 엔지니어 + 크래시 분석가"*. 현재 동작: Docker 격리 엔진, 자가치유
+빌드, 멀티 스택 harness 합성(C/C++ · Python/Atheris · Rust/cargo-fuzz), 비단순 harness 형태(round-trip ·
+differential · stateful · checksum-gate), 전략 선택, 코퍼스 관리, 커버리지 개선 루프 — 무거운 분야
+(crypto/TLS, media/codec)에서 검증됨. 버전 이력: [CHANGELOG.md](CHANGELOG.md).
 
 ## 라이선스
 

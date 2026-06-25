@@ -30,7 +30,8 @@ follow-ons — fixing the first often clears the rest.
 | `cannot find -lXXX` | dependency not installed in image | `apt-get install` it in the Dockerfile, or build it |
 | CMake `Could NOT find <Pkg>` | missing build dependency | install the `-dev` package in the Dockerfile |
 | `clang: command not found` | base image lacks toolchain | switch base to `aflplusplus/aflplusplus` or an LLVM image |
-| build hangs / OOM | building the whole project | scope the build to just the target's translation units |
+| `./configure`: **"C compiler is unable to create an executable / C compiler test failed"** | sanitizer flags in `--extra-cflags` but not `--extra-ldflags`: configure's link probe lacks the ASan runtime | mirror the flags into `--extra-ldflags` (autotools — ffmpeg/OpenSSL; see [dockerfile-generation.md](dockerfile-generation.md#cc-cmake)) |
+| build hangs / OOM | building the whole project | scope the build to just the target's translation units, or narrow configure (`--disable-everything --enable-decoder=X`) |
 
 ## Diagnose → fix (runtime / link-time, surfaces on first run)
 

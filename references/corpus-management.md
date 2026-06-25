@@ -46,6 +46,13 @@ when the corpus is near-empty**, so you don't re-explode seeds over a corpus tha
 No sample inputs anywhere? Start empty — libFuzzer will bootstrap — but say so in the report; an empty seed is
 a disclosed weakness, not a silent one.
 
+**Heavy domains live or die on the seed.** For crypto/TLS and media/codecs a cold start is nearly hopeless —
+the format is too structured for the mutator to invent. Source real seeds: a few valid `.der`/`.pem` certs or
+captured handshake records for TLS; a handful of tiny real `.mp4`/`.png`/`.ogg`/`.flac` files for a codec
+(one per sub-format you enabled in the build). Projects onboarded to OSS-Fuzz ship a `*_seed_corpus.zip`
+beside each fuzzer — use it. Keep each seed small (the ≤ 5 MB rule) and prefer many tiny valid inputs over a
+few large ones, so a single mutation maps to one structural change.
+
 ## 2. Minimize the corpus with `-merge=1`
 
 After a run (or any time the corpus grows), shrink it: `-merge=1` keeps the smallest set of inputs that

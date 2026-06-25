@@ -3,6 +3,43 @@
 All notable changes to FuzzriX are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project uses semantic versioning.
 
+## [0.5.0] — 2026-06-25
+
+Heavy domains: the playbook learns the harness *shapes* and build moves that
+crypto/TLS and media/codec targets need, validated end-to-end on real OSS.
+
+### Added
+- **harness-generation** — a "Harness shapes" section beyond feed-bytes-to-one-parser:
+  **round-trip** (encode↔decode identity oracle), **differential** (two impls, one
+  input), **stateful / structure-aware** (multi-step protocol drivers, grammar
+  mutators), and **self-check gates** (CRC/MAC/signature — stub, recompute, or
+  disclose). Plus: prefer a project's own maintained fuzzers (`fuzz/`,
+  `tools/*_fuzzer.c`, `programs/fuzz/`) over hand-authoring.
+- **dockerfile-generation** — narrow huge builds to the surface under test (ffmpeg
+  `--disable-everything --enable-decoder=X`, OpenSSL `enable-fuzz-libfuzzer`, mbedTLS
+  `programs/fuzz`) so a self-heal round is minutes, not the better part of an hour.
+- **corpus-management** — heavy domains live or die on a real seed; source actual
+  certs / tiny media files (and the OSS-Fuzz `*_seed_corpus.zip`) — a cold start is
+  near-hopeless for structured formats.
+
+### Changed
+- **strategy-selection** — flags alone won't move crypto/media; they need one of the
+  new harness shapes **plus** a real corpus. Points to the shapes section.
+
+### Fixed
+- **dockerfile-generation / self-healing** — two real self-heal gaps from the ffmpeg
+  validation: ① autotools `./configure` fails its C-compiler test ("unable to create
+  an executable") when sanitizer flags are only in `--extra-cflags` — they must also
+  be in `--extra-ldflags`; ② codec libs need `--disable-asm` (hand-written SIMD isn't
+  coverage-instrumented and breaks the link on arm64 with `undefined reference to ff_*_neon`).
+
+### Validated
+- **mbedTLS X.509 DER parse** (crypto/TLS) — built first try, 4.7M execs / 91s
+  (~52k exec/s), cov 1203; no crash (hardened).
+- **ffmpeg MJPEG decode** (media/codec) — built after the two self-heals above, 181k
+  execs / 91s, cov 6348 / ft 25268; no crash (hardened). Both are *fuzzed, no finding*
+  ledger results, not "all clear."
+
 ## [0.4.1] — 2026-06-24
 
 A correctness patch for the validation methodology: a single timed fuzz run is

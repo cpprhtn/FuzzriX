@@ -27,6 +27,16 @@ toolchain complexity lives here so the host stays clean (BYOD).
 - Produce a known binary path **outside `/out`** (e.g. `/fuzzer`) so `run_fuzz.sh` can launch it. `run_fuzz.sh`
   bind-mounts the host out-dir over `/out` at run time, so a binary built into `/out` is masked and the run
   fails with `stat /out/fuzzer: no such file or directory`. Keep `/out` for corpus + crashes only.
+- **Narrow the build for huge targets** (ffmpeg, OpenSSL, a browser engine). Building the whole project to
+  fuzz one decoder wastes 10–30 min per self-heal round and may OOM the build. Use the project's own knobs to
+  compile only the surface under test: ffmpeg `./configure --disable-everything --enable-decoder=<X> --enable-demuxer=<Y>`,
+  OpenSSL `./Configure enable-fuzz-libfuzzer no-shared`, mbedTLS its `programs/fuzz` CMake target. Prefer a
+  library's **own fuzz build mode** over a from-scratch toolchain — it already wires sanitizers + the harness.
+  For codec/media libs, add **`--disable-asm`**: hand-written SIMD (`.S`/NEON/yasm) isn't coverage-instrumented
+  anyway, and on arm64 a partial/narrowed build often fails to link with `undefined reference to ff_*_neon` —
+  disabling asm forces the instrumented C fallbacks and sidesteps it. (You lose speed, not coverage.)
+- **Use the project's maintained harnesses when present** (`fuzz/`, `tools/*_fuzzer.c`, `programs/fuzz/`):
+  point the Dockerfile at those instead of hand-authoring, and the build is the only thing left to get right.
 
 ## Sanitizer flags & runtime options {#sanitizers}
 
@@ -150,6 +160,23 @@ RUN clang++ -g -O1 -fsanitize=fuzzer,address,undefined \
 
 Note `-fsanitize=fuzzer-no-link` on the library (instrument but don't add the entry point) and
 `-fsanitize=fuzzer` on the final link (adds `main`).
+
+> **`./configure` (autotools: ffmpeg, OpenSSL, …) — sanitizer flags go in *both*
+> cflags and ldflags (common self-heal).** A configure script probes the toolchain
+> by *compiling and linking* a tiny test program. If you pass `-fsanitize=address`
+> (or `fuzzer-no-link`) only in `--extra-cflags`, the test object compiles with ASan
+> but the link step has no ASan runtime → undefined symbols → configure aborts with
+> **"C compiler is unable to create an executable file. C compiler test failed."**
+> The flags are correct; they're just not on the link line. Fix by mirroring them
+> into the link flags too:
+> ```dockerfile
+> RUN ./configure --cc=clang --disable-everything --enable-decoder=mjpeg \
+>         --extra-cflags="-g -O1 -fsanitize=fuzzer-no-link,address,undefined" \
+>         --extra-ldflags="-fsanitize=fuzzer-no-link,address,undefined" \
+>     && make -j"$(nproc)"
+> ```
+> (Same root cause for any `CFLAGS`-without-`LDFLAGS` autotools build. CMake's
+> `CMAKE_C_FLAGS` feeds both compile and link, so it doesn't hit this.)
 
 > **Generated headers (common self-heal).** Many CMake projects *generate* a header at configure time —
 > most often an export header (`<name>_export.h` from `GenerateExportHeader`, defining `<NAME>_EXPORT` etc.).

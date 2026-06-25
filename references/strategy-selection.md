@@ -86,7 +86,9 @@ run metrics. Tie the rationale to the target's *shape*, not to chance:
 Map the rationale to the README's strategy axes where it helps the reader: **raw-bytes** (no dict, just
 value_profile) · **dictionary** (`-dict`) · **structure-aware** (dict + a structured harness) · the
 differential/stateful axes are harness-shape decisions, not libFuzzer flags — note them but resolve them in
-[harness-generation.md](harness-generation.md).
+[harness-generation.md § Harness shapes](harness-generation.md#harness-shapes). Heavy domains
+(crypto/TLS, media/codecs) almost always need one of those shapes plus a real seed corpus — flags alone
+won't move them.
 
 ## Discipline
 
