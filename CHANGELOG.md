@@ -3,6 +3,42 @@
 All notable changes to FuzzriX are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project uses semantic versioning.
 
+## [0.10.2] — 2026-06-25
+
+Three more verification rounds (7–9) on the parts the first pass didn't reach —
+crash dedup, single-file scanning, the eval CSV.
+
+### Fixed
+- **crash dedup was splitting one bug** — the `crash_state` signature dropped
+  sanitizer/libc frames but **not the harness entry point**, so the *same* bug
+  bucketed differently depending on whether `LLVMFuzzerTestOneInput` happened to
+  parse into the top-3 (and on its address/line, which shift every recompile). The
+  harness driver (`LLVMFuzzerTestOneInput` / Jazzer `fuzzerTestOneInput` / atheris
+  `TestOneInput`) is now excluded from the dedup state, so the same bug merges and
+  distinct bugs stay separate. (`crash-triage.md` step 5 updated to match.)
+- **`scripts/scan_targets.py` silently returned `count: 0` for a single-file
+  argument** (`rglob('*')` yields nothing on a file) — it now scans a lone file
+  like the other helpers.
+- **(core, local) the multi-trial bench wasn't independent** — every trial reused
+  one `/tmp/fuzzrix-bench-<name>` dir, so trial N started from trial N-1's *grown*
+  corpus (biasing the median, which assumes independent samples) and later trials
+  clobbered earlier crash artifacts. Each trial now runs in its own wiped dir
+  (validated: two cJSON trials kept separate ~1.4k-file corpora, not a cumulative
+  one). `ablation` already used unique per-run dirs — unaffected.
+
+### Verified
+- crash dedup merges same-bug/different-address and keeps distinct bugs apart, and
+  is stable against recompile-volatile frame suffixes (lambda/clone numbers);
+  `eval.write_metrics` emits a clean metrics CSV.
+- **the third template now built end-to-end** (`python-atheris` — atheris compiled,
+  caught an `IndexError`), so all three starters are confirmed building as shipped;
+  the harness-frame dedup fix was validated on that real atheris crash (`bucket =
+  IndexError || parse`, `TestOneInput` excluded). `surface.identify` (wraps the
+  scanner) inherits the macro-API fix; `pipeline.run` guards empty candidates;
+  `scan_targets` is graceful (count 0, no crash) on Rust/Go/Python; `llm` degrades
+  to a heuristic backend with no API key. Two more rounds (10–11) surfaced no new
+  bugs. Full suite green (97 tests).
+
 ## [0.10.1] — 2026-06-25
 
 A 6-round verification & hardening pass over everything shipped so far — running

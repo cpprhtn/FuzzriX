@@ -86,8 +86,10 @@ reproducer, a root-cause line, a severity, and a fix.
    deterministic signature, not an eyeball judgement. Build `crash_state` once per crash:
 
    1. Walk the stack top-down. **Drop noise frames**: sanitizer/runtime internals (`__asan_*`, `__interceptor_*`,
-      `__sanitizer::*`, `operator new`/`malloc`/`free`/`memcpy` interceptors), libc/loader frames, and any
-      line < 3 chars.
+      `__sanitizer::*`, `operator new`/`malloc`/`free`/`memcpy` interceptors), libc/loader frames, the **harness
+      entry point** (`LLVMFuzzerTestOneInput` / Jazzer `fuzzerTestOneInput` / atheris `TestOneInput` — it's at
+      the bottom of *every* fuzz stack, so leaving it in would split one bug when it parses in some runs but not
+      others), and any line < 3 chars.
    2. From each surviving frame keep the **function name only**: strip `(args)`, `[...]`, anonymous-namespace
       noise, and split on `!`; ignore the `file:line` for the key (it shifts with every recompile).
    3. Take the **first 3** surviving frames (`MAX_CRASH_STATE_FRAMES = 3`).

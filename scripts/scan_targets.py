@@ -76,6 +76,11 @@ KEYWORDS = {"if", "for", "while", "switch", "return", "sizeof", "do", "else", "c
 
 
 def iter_source_files(root: Path, exts: set[str]):
+    # accept a single source file as well as a directory (rglob yields nothing on a file)
+    if root.is_file():
+        if root.suffix in exts:
+            yield root
+        return
     for p in root.rglob("*"):
         if p.is_dir():
             continue
