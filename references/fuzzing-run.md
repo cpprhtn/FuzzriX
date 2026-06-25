@@ -32,9 +32,10 @@ exec/s, peak RSS, and corpus growth out of the run (see *Metrics to extract* bel
 [strategy-selection.md](strategy-selection.md)).
 
 **One entry point, every engine.** `run_fuzz.sh` always launches `/fuzzer`. C/C++ build the binary there
-directly; Python (atheris) and Rust (cargo-fuzz) are also libFuzzer drivers, so a one-line `/fuzzer` wrapper
-(atheris) or `cp` (cargo-fuzz) lets them reuse this exact path with the same flags. Go is the exception — its
-native fuzzer is a separate runner; drive it directly (see *Engine variations* below).
+directly; Python (atheris), Rust (cargo-fuzz), and Java/JVM (Jazzer) are also libFuzzer drivers, so a one-line
+`/fuzzer` wrapper (atheris / `jazzer_driver`) or `cp` (cargo-fuzz) lets them reuse this exact path with the same
+flags. Go is the exception — its native fuzzer is a separate runner; drive it directly (see *Engine variations*
+below).
 
 ### Flag reference
 

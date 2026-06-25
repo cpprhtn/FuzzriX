@@ -3,6 +3,35 @@
 All notable changes to FuzzriX are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project uses semantic versioning.
 
+## [0.7.0] — 2026-06-25
+
+New language stack — **Java/JVM via Jazzer** — added end-to-end and validated by
+catching a real CVE; plus the external-validity matrix grows to two real bugs.
+
+### Added
+- **Java / JVM stack (Jazzer)** — `references/harness-generation.md` gains a Java/JVM
+  section (FuzzedDataProvider harness, `jazzer_driver` wiring that reuses the
+  `/fuzzer` path, and the bug-detector finding model: RCE/SSRF/injection/unsafe
+  deserialization), a `templates/jvm-jazzer/` starter, and routing in `00-map.md`
+  (`pom.xml`/`build.gradle`) + `fuzzing-run.md`. The engine-model table marks JVM ✅.
+- (core, local) `analysis.parse` now understands Jazzer's `== Java Exception:` output
+  (security-issue vs plain exception, target-framed stack skipping `jaz.Zer`/jdk),
+  and `classify` grades a `FuzzerSecurityIssue` as a real security finding vs a
+  managed-runtime DoS for a plain exception.
+
+### Fixed
+- **harness-generation** — two real self-heal hits building the JVM target:
+  `javac` needs `-encoding UTF-8` (the base image defaults to US-ASCII, so any
+  non-ASCII source byte fails), and arm64 hosts must pull the x64 base image with
+  `DOCKER_DEFAULT_PLATFORM=linux/amd64`.
+
+### Validated
+- **snakeyaml 1.30 / CVE-2022-1471** (Java/Jazzer) — the engine triggered the
+  unsafe-deserialization **RCE** (default `Yaml().load`) via Jazzer's bug detector;
+  crash proven by re-run, analyst scored crash-type + site + provenance and
+  classified it security/High. Second real CVE in the external matrix (after
+  libxml2), and the first on a non-C stack.
+
 ## [0.6.0] — 2026-06-25
 
 External ground truth: validate the skill against a **real historical CVE**, not

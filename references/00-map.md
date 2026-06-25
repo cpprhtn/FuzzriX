@@ -10,7 +10,7 @@ whole tree.
 | 0. Gate | [authorization.md](authorization.md) | who/what you may fuzz; mandatory resource & sandbox caps |
 | 1–2. Profile & extract | [context-extraction.md](context-extraction.md) | detect stack/build system; find & rank target functions |
 | 2b. Strategy | [strategy-selection.md](strategy-selection.md) | pick libFuzzer knobs (value_profile, dict, fork, max_len) per mode + emit rationale |
-| 3a. Harness | [harness-generation.md](harness-generation.md) | per-engine harness patterns (libFuzzer, AFL++, Atheris, cargo-fuzz, Go) |
+| 3a. Harness | [harness-generation.md](harness-generation.md) | per-engine harness patterns (libFuzzer, AFL++, Atheris, cargo-fuzz, Jazzer, Go) |
 | 3b. Dockerfile | [dockerfile-generation.md](dockerfile-generation.md) | trusted base images, sanitizer build flags + runtime `*_OPTIONS`, dict placement, layering |
 | 4. Build & heal | [self-healing.md](self-healing.md) | the bounded compile-error feedback loop |
 | 5. Fuzz | [fuzzing-run.md](fuzzing-run.md) | running with caps, flags, exit codes, stderr signals, metrics |
@@ -27,6 +27,7 @@ whole tree.
 | `pyproject.toml` / `setup.py` | [harness-generation.md](harness-generation.md#python-atheris) |
 | `Cargo.toml` | [harness-generation.md](harness-generation.md#rust-cargo-fuzz) |
 | `go.mod` | [harness-generation.md](harness-generation.md#go-native) |
+| `pom.xml` / `build.gradle` (Java/Kotlin/Scala) | [harness-generation.md](harness-generation.md#jvm-jazzer) — Jazzer |
 | a build error in `docker build` output | [self-healing.md](self-healing.md) |
 | a target full of `memcmp`/magic-number checks, or a known file format | [strategy-selection.md](strategy-selection.md) — value_profile + a dict |
 | an existing `corpus/` / sample-input dir, or you want runs to accumulate | [corpus-management.md](corpus-management.md) |
@@ -45,3 +46,5 @@ whole tree.
 | Template | Use |
 |---|---|
 | [`templates/cpp-libfuzzer/`](../templates/cpp-libfuzzer/) | starting Dockerfile + `LLVMFuzzerTestOneInput` harness for C/C++ |
+| [`templates/python-atheris/`](../templates/python-atheris/) | starting Dockerfile + `atheris` harness for Python |
+| [`templates/jvm-jazzer/`](../templates/jvm-jazzer/) | starting Dockerfile + Jazzer `fuzzerTestOneInput` harness for Java/JVM |

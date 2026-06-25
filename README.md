@@ -82,12 +82,12 @@ or remote hosts. It runs target code only inside Docker and caps CPU/RAM/disk/ti
 
 ## Status
 
-**v0.6.0.** The thesis is *"LLM = fuzzing engineer + crash analyst."* Working today: the Docker-isolated
-engine, self-healing builds, multi-stack harness synthesis (C/C++ · Python/Atheris · Rust/cargo-fuzz),
-non-trivial harness shapes (round-trip · differential · stateful · checksum-gate), strategy selection, corpus
-management, and a coverage-improvement loop — validated on heavy domains (crypto/TLS, media/codec) and against
-a **real external CVE** (libxml2: the engine re-found a historical heap-overflow and the analyst named the
-right function + CWE). Version history: [CHANGELOG.md](CHANGELOG.md).
+**v0.7.0.** The thesis is *"LLM = fuzzing engineer + crash analyst."* Working today: the Docker-isolated
+engine, self-healing builds, multi-stack harness synthesis (C/C++ · Python/Atheris · Rust/cargo-fuzz ·
+**Java/JVM/Jazzer** · Go), non-trivial harness shapes (round-trip · differential · stateful · checksum-gate),
+strategy selection, corpus management, and a coverage-improvement loop — validated on heavy domains (crypto/TLS,
+media/codec) and against **real external CVEs** (libxml2 heap-overflow re-found with a 4/4 analyst score;
+snakeyaml's CVE-2022-1471 RCE caught on the JVM stack). Version history: [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 

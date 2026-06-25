@@ -33,7 +33,7 @@ any language" is the wrong model; **"libFuzzer engine + a per-language coverage 
 | **Rust** | direct (rustc = LLVM) | `cargo-fuzz` / `libfuzzer-sys` (links real libFuzzer) | ✅ (`cp` the binary) |
 | **Swift / Obj-C** | direct (LLVM) | `-fsanitize=fuzzer` | ✅ |
 | **Python** | bridge (embeds libFuzzer) | **Atheris** (bytecode-coverage) | ✅ (1-line wrapper) |
-| **Java / JVM** | bridge | **Jazzer** | ◑ (libFuzzer-style CLI; no FuzzriX template yet) |
+| **Java / JVM** | bridge | **Jazzer** | ✅ (libFuzzer-style CLI; see [§ Java/JVM](#jvm-jazzer) + `templates/jvm-jazzer/`) |
 | **JS / Node** | bridge | **Jazzer.js** | ◑ (no template yet) |
 | **C# / .NET** | bridge | **SharpFuzz** (libFuzzer/AFL) | ◑ (no template yet) |
 | **Go** | ❌ not libFuzzer | native `go test -fuzz` | ❌ separate runner |
@@ -237,6 +237,54 @@ atheris.Fuzz()
 
 Catch *expected* exceptions only; let `MemoryError`, `RecursionError`, segfaults, and unexpected types
 surface. `FuzzedDataProvider` is the idiomatic way to derive typed inputs.
+
+---
+
+## Java / JVM — Jazzer {#jvm-jazzer}
+
+Jazzer is **libFuzzer for the JVM** (Kotlin/Scala/Clojure too) — same mutation/coverage engine, a JVM agent
+supplies the coverage. The harness is a class with a static `fuzzerTestOneInput`:
+
+```java
+import com.code_intelligence.jazzer.api.FuzzedDataProvider;
+
+public class YamlFuzzer {
+    public static void fuzzerTestOneInput(FuzzedDataProvider data) {
+        try {
+            new org.yaml.snakeyaml.Yaml().load(data.consumeRemainingAsString());
+        } catch (RuntimeException expected) {   // malformed input rejected by design
+        }
+    }
+    // optional one-time setup: public static void fuzzerInitialize() { ... }
+}
+```
+
+The signature is either `fuzzerTestOneInput(FuzzedDataProvider data)` (typed values; same front/back
+consumption model as the C++ FDP) or `fuzzerTestOneInput(byte[] data)`. Compile against the Jazzer API and the
+target jar, then drive it the OSS-Fuzz way:
+
+```dockerfile
+FROM gcr.io/oss-fuzz-base/base-builder-jvm        # bundles JDK + a working Jazzer
+RUN javac -cp "$JAZZER_API_PATH:/target.jar" -d / Fuzzer.java
+# /fuzzer = wrapper so run_fuzz.sh's `docker run /fuzzer <libFuzzer flags>` just works:
+RUN printf '#!/bin/bash\nexec /usr/local/bin/jazzer_driver \
+  --agent_path=/usr/local/bin/jazzer_agent_deploy.jar \
+  --cp=/:/target.jar --target_class=Fuzzer --jvm_args="-Xmx2048m:-Xss1024k" "$@"\n' > /fuzzer && chmod +x /fuzzer
+```
+
+`jazzer_driver` accepts the same libFuzzer flags `run_fuzz.sh` passes (`-max_total_time`, `-artifact_prefix`,
+a corpus dir), so the JVM stack reuses the `/fuzzer` path like Atheris does. **Compile with `javac -encoding
+UTF-8`** — the base image's default locale is US-ASCII, so any non-ASCII byte in the source (a comment, a
+string literal) fails the build with `unmappable character` (a real self-heal hit). On Apple-silicon/arm64
+hosts, pull the x64 base image with `DOCKER_DEFAULT_PLATFORM=linux/amd64` (it runs under emulation).
+
+**What counts as a finding (managed runtime):** an **uncaught exception/`Error`** (so catch only the parser's
+*declared* failure mode — usually a `RuntimeException` subtype — and let everything else through: a
+`StackOverflowError`, `OutOfMemoryError`, `NullPointerException` from library code, or a timeout is the bug).
+Jazzer also ships **bug detectors** that turn silent sinks into crashes — SSRF, OS command injection, path
+traversal, deserialization, LDAP/SQL/expression injection — so a reachable injection sink crashes even without a
+memory error. `--instrumentation_includes=com.target.**` keeps instrumentation (and detectors) focused on the
+target's packages. (Same managed-language triage rule as Python — see the engine-model table above.)
 
 ---
 
