@@ -1,7 +1,7 @@
 ---
 name: fuzzrix
 description: 'This skill should be used when the user asks to "fuzz this project", "set up fuzzing", "write a fuzz harness", "find memory bugs / crashes", "add libFuzzer/AFL++/Atheris", "auto-generate a fuzzer", "run continuous fuzzing", or mentions "FuzzriX / 퍼징 / 퍼즈 하네스". FuzzriX is an AI-driven, universal fuzzing accelerator: it profiles a target repo, extracts high-risk target functions (file/network/parsing/string sinks), generates a fuzz harness + a Dockerfile, builds them in an isolated container, self-heals compile errors in a feedback loop, runs the fuzzer, and reports triaged crashes with reproducers and fixes.'
-version: 0.8.1
+version: 0.9.0
 allowed-tools: Read Grep Glob Bash Write Edit Skill AskUserQuestion WebSearch WebFetch TodoWrite
 ---
 

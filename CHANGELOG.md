@@ -3,6 +3,31 @@
 All notable changes to FuzzriX are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project uses semantic versioning.
 
+## [0.9.0] — 2026-06-25
+
+Magma multi-target ground-truth integration (the external-validity benchmark).
+
+### Added
+- (core, local) **`fuzzrix.magma`** — consumes Magma's ground truth: parses the
+  monitor CSV (`PNG001_R/_T` reached/triggered counters), builds the bug→file
+  catalog straight from `targets/<t>/patches/bugs/*.patch` (no hardcoded table),
+  and scores whether the engine triggered a known bug + whether the analyst's
+  crash frame lands in that bug's file. Tested end-to-end on the real libpng
+  catalog (7 PNG bugs); +6 tests (76 total).
+
+### Changed
+- **dockerfile-generation** — generalized the "disable hand-written SIMD" note:
+  libpng needs `--enable-arm-neon=no` (else `arm/filter_neon.lo` won't compile on
+  arm64), alongside ffmpeg's `--disable-asm` — same root cause, per-project flag.
+
+### Validated / honest limits
+- Built Magma's libpng with all 7 bug patches **live** (3 self-heals: the
+  `MAGMA_AND` canary macro, `--enable-arm-neon=no`, `-include cstdlib`). The engine
+  ran 2.78 M execs / 151 s and a PNG chunk-type dict measurably deepened reach into
+  the chunk handlers — but **no bug triggered in ≤151 s**, as expected: Magma bugs
+  are deep and its campaigns run *hours*. The scorer is ready; a long campaign is
+  the open step (see `docs/EVALUATION.md`).
+
 ## [0.8.1] — 2026-06-25
 
 Documentation audit: fix drift, tighten verbose passages, verify every link.

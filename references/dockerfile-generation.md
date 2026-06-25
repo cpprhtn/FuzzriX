@@ -32,9 +32,10 @@ toolchain complexity lives here so the host stays clean (BYOD).
   compile only the surface under test: ffmpeg `./configure --disable-everything --enable-decoder=<X> --enable-demuxer=<Y>`,
   OpenSSL `./Configure enable-fuzz-libfuzzer no-shared`, mbedTLS its `programs/fuzz` CMake target. Prefer a
   library's **own fuzz build mode** over a from-scratch toolchain — it already wires sanitizers + the harness.
-  For codec/media libs, add **`--disable-asm`**: hand-written SIMD (`.S`/NEON/yasm) isn't coverage-instrumented
-  anyway, and on arm64 a partial/narrowed build often fails to link with `undefined reference to ff_*_neon` —
-  disabling asm forces the instrumented C fallbacks and sidesteps it. (You lose speed, not coverage.)
+  For any lib with hand-written SIMD, **disable it** — it isn't coverage-instrumented anyway, and on arm64 a
+  build often fails on the arch-specific asm (ffmpeg `--disable-asm` → otherwise `undefined reference to
+  ff_*_neon`; libpng `--enable-arm-neon=no` → otherwise `arm/filter_neon.lo` won't compile). Disabling forces
+  the instrumented C fallbacks. (You lose speed, not coverage.)
 - **Use the project's maintained harnesses when present** (`fuzz/`, `tools/*_fuzzer.c`, `programs/fuzz/`):
   point the Dockerfile at those instead of hand-authoring, and the build is the only thing left to get right.
 
