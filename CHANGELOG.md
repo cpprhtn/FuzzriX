@@ -3,6 +3,28 @@
 All notable changes to FuzzriX are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project uses semantic versioning.
 
+## [0.6.0] — 2026-06-25
+
+External ground truth: validate the skill against a **real historical CVE**, not
+just self-injected dogfood bugs — and score both pillars (did the engine trigger
+*the* bug, did the analyst name the right function + CWE).
+
+### Added
+- **Ground-truth eval** — the oracle now carries `provenance` (`injected` vs
+  `external-real`) and an expected `crash_type`; the scorer adds a `crash_type`
+  match and breaks the summary out **by provenance**, so external validity is
+  reported separately from pipeline-wiring validity.
+- **crash-triage** — a "known upstream bug vs. novel finding" discipline: a crash in
+  a third-party library pinned to an old version may be already-fixed upstream;
+  report it as *reproduces-a-known-bug / upgrade-to-fix*, not as a 0-day.
+
+### Validated
+- **libxml2 2.9.2** (external CVE) — built first try (the v0.5.0 autotools
+  `--extra-ldflags` fix held on a second target), the engine re-found a real
+  heap-buffer-overflow (OOB read) in `xmlParseXMLDecl` from a UTF-16-BOM input, and
+  the analyst scored **4/4**: crash type, crash site (file/function/line), root-cause
+  function, and CWE-125 all correct. Crash proven by re-run.
+
 ## [0.5.1] — 2026-06-25
 
 A measurement patch: make per-engine coverage honest — parse Go's proxy, and

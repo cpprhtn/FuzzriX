@@ -114,6 +114,23 @@ reproducer, a root-cause line, a severity, and a fix.
    > few frames up. Those need you to **read the source** and name the true culprit — measured to be exactly
    > where mechanical heuristics stop and the LLM analyst adds the accuracy.
 
+## Known upstream bug vs. novel finding
+
+When the target is a **third-party library pinned to a specific version** (not first-party code), a reproduced
+crash is not automatically a new vulnerability — it may be a bug **already fixed upstream** after that version.
+Before reporting it as a finding, check: is the crashing function changed in a later release / referenced by a
+known CVE for this version range? State the verdict explicitly:
+
+- **Known + already fixed upstream** → report as *"reproduces a known upstream bug (fixed in vX.Y); upgrade to
+  fix"*, not as a 0-day. Still useful (confirms the harness reaches real bugs; flags an out-of-date dependency),
+  but don't overclaim novelty.
+- **In first-party code, or no known fix** → treat as a genuine finding and follow the report shape below.
+
+The crash itself is identical either way (same sanitizer output, same dedup key); only the *framing and the fix
+advice* change (upgrade-the-dep vs. patch-the-line). This is also how FuzzriX's own ground-truth eval is built —
+fuzz a real library at a vulnerable pinned version and confirm the engine re-finds the historical bug and the
+analyst names the right function/CWE.
+
 ## Report shape
 
 Lead with a summary, then findings ordered by severity. Prose in the user's language; keep the machine bits
