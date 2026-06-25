@@ -3,6 +3,25 @@
 All notable changes to FuzzriX are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project uses semantic versioning.
 
+## [0.8.0] — 2026-06-25
+
+New deterministic helper — **dictionary mining** — closes the gap between
+"synthesize a dict" advice and a tool that does it, validated to find a bug.
+
+### Added
+- **`scripts/mine_dict.py`** — builds a libFuzzer/AFL++ dictionary from the target's
+  own source: string literals + magic byte-arrays (hex `{0x89,…}`, char `{'P','N','G'}`,
+  and **decimal** `{137,80,…}` gated on a signature context to keep lookup tables out),
+  scored by gate-proximity (`memcmp`/`strncmp`/…) and escaped for libFuzzer (control
+  bytes → `\xNN`, so the file is never rejected). Wired into `strategy-selection.md`,
+  `00-map.md` (helper table), and `CLAUDE.md`.
+
+### Validated
+- 3-trial ablation on `stb_image`: a **mined dict found a decoder crash within a 20 s
+  cap that the no-dict and value-profile-only runs did not** (its lower `cov`/`ft` is
+  the stop-at-first-crash artifact, not a regression). The mined PNG/JFIF/RADIANCE
+  magics drove the fuzzer to a real bug fast.
+
 ## [0.7.0] — 2026-06-25
 
 New language stack — **Java/JVM via Jazzer** — added end-to-end and validated by
