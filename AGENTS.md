@@ -53,6 +53,8 @@ deep-reaching) → **coverage coach** (clear the wall the engine is stuck behind
   scanner — it ranks where to point a fuzzer, not what is "buggy".
 - `python3 scripts/mine_dict.py <repo> -o fuzz.dict` — mine a libFuzzer dictionary (magic bytes + string
   literals) from the target's source to get past format gates; pass it as `-dict=fuzz.dict`.
+- `python3 scripts/collect_seeds.py <repo> -o out/corpus` — bootstrap a seed corpus from the repo's sample
+  dirs + `*_seed_corpus.zip` (dedup, ≤5 MB, hash-named). One valid seed beats most flags.
 - `bash scripts/run_fuzz.sh <build-dir> <out-dir> [seconds]` — build the Docker image and run the fuzzer with
   caps, mounting the output dir for corpus/crashes.
 - `… /fuzzer -print_coverage=1 | python3 scripts/cover_gaps.py - --src /src` — rank uncovered / partly-covered

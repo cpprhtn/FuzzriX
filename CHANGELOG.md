@@ -3,6 +3,21 @@
 All notable changes to FuzzriX are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project uses semantic versioning.
 
+## [0.11.0] — 2026-06-28
+
+New deterministic helper — **seed-corpus bootstrap** — completes the loop toolkit
+(target selection · gate-passing dict · **seeds** · coverage diagnosis · run).
+
+### Added
+- **`scripts/collect_seeds.py`** — builds a seed corpus from the target repo, with
+  the `corpus-management.md` discipline baked in: pull data files from the sample
+  dirs (`test*/`, `samples/`, `testdata/`, `fixtures/`, `corpus/`, …) while skipping
+  source/build/doc files, **unpack `*_seed_corpus.zip`** (the OSS-Fuzz convention),
+  cap at 5 MB, dedup by content, and write each seed under its sha256 name (flat,
+  merge-friendly). `--ext png,jpg` matches a known format anywhere instead. A good
+  seed is the cheapest way past a format gate (the Magma libpng run showed it).
+  Wired into `corpus-management.md`, `00-map.md`, `SKILL.md`, `CLAUDE.md`, `AGENTS.md`.
+
 ## [0.10.2] — 2026-06-25
 
 Three more verification rounds (7–9) on the parts the first pass didn't reach —

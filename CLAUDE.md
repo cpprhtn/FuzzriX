@@ -35,7 +35,7 @@ analysis is a baseline for "what's a real bug vs intended rejection"; the engine
   `crash-triage.md`, `strategy-selection.md`, `corpus-management.md`, `coverage-iteration.md`) carry exact
   flags/constants; when editing them, re-verify a claimed flag/default against the official libFuzzer docs
   rather than from memory.
-- `scripts/` — deterministic helpers (`scan_targets.py`, `mine_dict.py`, `run_fuzz.sh`, `cover_gaps.py`). These are the only executable
+- `scripts/` — deterministic helpers (`scan_targets.py`, `mine_dict.py`, `collect_seeds.py`, `run_fuzz.sh`, `cover_gaps.py`). These are the only executable
   code FuzzriX owns.
 - `templates/` — starter dual-artifacts (harness + Dockerfile) per stack: `cpp-libfuzzer/`,
   `python-atheris/`. The agent copies these into a target repo's `fuzz/` build context and fills in
@@ -58,6 +58,11 @@ python3 scripts/scan_targets.py <repo> --top 10 --lang c
 # string/keyword literals, escaped for libFuzzer) to get past format gates.
 python3 scripts/mine_dict.py <repo> -o fuzz.dict   # then pass -dict=fuzz.dict
 python3 scripts/mine_dict.py <repo> --pretty       # ranked, with reasons
+
+# Bootstrap a seed corpus from the repo's sample dirs + *_seed_corpus.zip (dedup,
+# ≤5MB, hash-named). One valid seed often unlocks far more coverage than any flag.
+python3 scripts/collect_seeds.py <repo> -o out/corpus
+python3 scripts/collect_seeds.py <repo> --ext png,jpg --dry-run   # known format / preview
 
 # Build the Docker fuzz image and run it under resource caps (BYOD: all in Docker).
 # <build-dir> holds the Dockerfile+harness+source; <out-dir> gets corpus/+crashes/.

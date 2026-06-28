@@ -28,11 +28,19 @@ Before the first run, copy any valid/sample inputs into the corpus dir. Look for
 `samples/`, `testdata/`, `corpus/`, `fixtures/`, example files, or anything whose format matches what the
 harness parses. **One valid input often unlocks orders of magnitude more coverage than starting empty.**
 
+Use **[`scripts/collect_seeds.py`](../scripts/collect_seeds.py)** — it does exactly this, with the discipline
+below baked in (pulls data files from the sample dirs while skipping source/build/doc files, **unpacks
+`*_seed_corpus.zip`**, caps at 5 MB, dedups by content, and writes each seed under its sha256 name so the
+corpus is flat and merge-friendly):
+
 ```bash
-# Copy candidate seeds in; flatten into the corpus dir (libFuzzer ignores subdir structure but be explicit).
-find ./tests ./samples ./testdata -type f -size -5M 2>/dev/null \
-  -exec cp -t out/corpus {} +     # cap at 5 MB/file (see size limit below)
+python3 scripts/collect_seeds.py <repo> -o out/corpus          # auto from sample dirs + seed_corpus.zip
+python3 scripts/collect_seeds.py <repo> -o out/corpus --ext png,jpg   # or match a known format anywhere
+python3 scripts/collect_seeds.py <repo> --dry-run --pretty     # preview counts/sizes first
 ```
+
+(The hand path is `find ./tests ./samples ./testdata -type f -size -5M -exec cp -t out/corpus {} +`, but the
+helper also handles the zip-unpack, dedup, and source-file filtering you'd otherwise do by eye.)
 
 If a seed bundle ships next to the target (e.g. a `*_seed_corpus.zip`), unpack it into the corpus dir **only
 when the corpus is near-empty**, so you don't re-explode seeds over a corpus that's already grown.

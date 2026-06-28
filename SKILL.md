@@ -1,7 +1,7 @@
 ---
 name: fuzzrix
 description: 'This skill should be used when the user asks to "fuzz this project", "set up fuzzing", "write a fuzz harness", "find memory bugs / crashes", "add libFuzzer/AFL++/Atheris", "auto-generate a fuzzer", "run continuous fuzzing", or mentions "FuzzriX / 퍼징 / 퍼즈 하네스". FuzzriX is an AI-driven, universal fuzzing accelerator: it profiles a target repo, extracts high-risk target functions (file/network/parsing/string sinks), generates a fuzz harness + a Dockerfile, builds them in an isolated container, self-heals compile errors in a feedback loop, runs the fuzzer, and reports triaged crashes with reproducers and fixes.'
-version: 0.10.2
+version: 0.11.0
 allowed-tools: Read Grep Glob Bash Write Edit Skill AskUserQuestion WebSearch WebFetch TodoWrite
 ---
 
@@ -134,7 +134,8 @@ Detect the stack by build files: `CMakeLists.txt`/`Makefile`/`*.c`/`*.cc`/`*.cpp
    Dockerfile, rebuild. Bounded loop (default 3 rounds). If it still won't build, record *why* in the ledger
    and move to the next target — don't fake success. → [self-healing.md](references/self-healing.md)
 6. **Fuzz** — run the container with resource + time caps, mount an output dir for the corpus/crashes. Seed
-   the corpus from sample inputs and `-merge=1`-minimize it (→ [corpus-management.md](references/corpus-management.md)).
+   the corpus from sample inputs (`python3 scripts/collect_seeds.py <repo> -o out/corpus`) and
+   `-merge=1`-minimize it (→ [corpus-management.md](references/corpus-management.md)).
    Watch the stderr signals, classify the exit code, extract metrics, watch for coverage plateau. →
    [fuzzing-run.md](references/fuzzing-run.md)
 7. **Improve coverage (bounded loop — the biggest performance lever)** — a first harness reaches little. Run a
